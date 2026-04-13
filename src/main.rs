@@ -1,45 +1,34 @@
+use std::env;
 use raylib::init;
 use raylib::prelude::{Color, Image, RaylibDraw, RaylibTexture2D, Rectangle, TextureFilter, Vector2};
 use raylib::prelude::KeyboardKey::KEY_SPACE;
+use crate::compiler::entry::entry;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::emulator::Emulator;
 
 mod consts;
 pub mod emulator;
 mod helper;
+pub mod compiler;
 
 fn main() {
+    let args = env::args().collect::<Vec<String>>();
+    println!("{:?}", args);
+    if args.len() == 3 && args[1] == "compile" {
+        entry(args[2].as_str());
+        return;
+    }
     #[allow(unused_mut)]
     let (mut rl, mut thread) = init()
         .size(SCREEN_SIZE.x, SCREEN_SIZE.y)
         .title("Rust Raylib")
         .build();
-    // rl.set_target_fps(60);
     let mut emulator = Emulator::new();
     let mut texture = rl.load_texture_from_image(&thread,
          &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
-    let mut counter = 0;
 
     while !rl.window_should_close() {
-        counter += 1;
-        if counter == 1 {
-            let t = rl.get_time() as f32;
-
-            let x = ((t * 123.45).sin() * 1000.0) as i32 % (TARGET_RESOLUTION.x - 1);
-            let y = ((t * 678.90).cos() * 1000.0) as i32 % (TARGET_RESOLUTION.y - 1);
-            counter = 0;
-            let time = (rl.get_time() * 123.4 % 255.0) as u8;
-            let color = Color::new(
-                time << 5 ^ time,
-                time >> 2 ^ time,
-                (time % 255 / 2) * 2 << 5 ^ time,
-                255,
-            );
-            println!("Color: {:?}", color);
-            emulator.put_pixel(x.abs(), y.abs(), color);
-        }
-
         emulator.update_frame(&mut texture);
 
         let mut d = rl.begin_drawing(&thread);
