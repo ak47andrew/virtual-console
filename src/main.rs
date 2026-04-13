@@ -1,7 +1,6 @@
 use std::env;
 use raylib::init;
 use raylib::prelude::{Color, Image, RaylibDraw, RaylibTexture2D, Rectangle, TextureFilter, Vector2};
-use raylib::prelude::KeyboardKey::KEY_SPACE;
 use crate::compiler::entry::entry;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::emulator::Emulator;
@@ -23,12 +22,20 @@ fn main() {
         .size(SCREEN_SIZE.x, SCREEN_SIZE.y)
         .title("Rust Raylib")
         .build();
-    let mut emulator = Emulator::new();
+    let mut emulator = Emulator::new(
+        if args.len() == 0 {
+            None
+        } else {
+            Some(args[1].clone())
+        }
+    );
+    emulator.load_program_to_rom();
     let mut texture = rl.load_texture_from_image(&thread,
          &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
 
     while !rl.window_should_close() {
+        emulator.step();
         emulator.update_frame(&mut texture);
 
         let mut d = rl.begin_drawing(&thread);
