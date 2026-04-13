@@ -1,7 +1,6 @@
-use std::cmp::min;
-use num_traits::Signed;
 use raylib::init;
 use raylib::prelude::{Color, Image, RaylibDraw, RaylibTexture2D, Rectangle, TextureFilter, Vector2};
+use raylib::prelude::KeyboardKey::KEY_SPACE;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::emulator::Emulator;
 
@@ -20,13 +19,11 @@ fn main() {
     let mut texture = rl.load_texture_from_image(&thread,
          &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
-    let mut i = 0;
     let mut counter = 0;
-    let limit = min(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y) - 1;
 
     while !rl.window_should_close() {
         counter += 1;
-        if counter == 5 {
+        if counter == 1 {
             let t = rl.get_time() as f32;
 
             let x = ((t * 123.45).sin() * 1000.0) as i32 % (TARGET_RESOLUTION.x - 1);
