@@ -2,3 +2,4 @@
 .idea/
 *.vea
 *.veb
+!example.vea

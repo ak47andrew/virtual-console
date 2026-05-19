@@ -55,8 +55,19 @@ impl Emulator {
                 let value = self.memory.read_u8();
                 self.memory.put(addr as usize, &[value]);
             }
-            2 => {
+            2 => { // Movl
+
+            }
+            3 => { // Hlt
                 self.memory.move_pc(-1);  // read_u8 move it forward, we move it back
+            }
+            4 => { // Load
+                match self.memory.read_u8() {
+                    0 => {
+                        let n = self.memory.read_u8();
+                    }
+                    v => panic!("Unknown load-opcode: {}", v)
+                }
             }
             v => {
                 panic!("Unknown opcode: {}", v);
