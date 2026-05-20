@@ -1,7 +1,9 @@
 use std::io::Write;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
-use crate::compiler::operands::{parse_operand, parse_u64_num, Operand};
+use crate::compiler::operand_checking::MOV_SIGNATURE;
+use crate::compiler::operands::{parse_operands, parse_u64_num, Operand, OperandKind};
+use crate::compiler::ParseError;
 
 pub fn entry(file: &str) {
     // file ends in .vea (virtual emulator assembly)
@@ -20,6 +22,19 @@ pub fn entry(file: &str) {
     file.write_all(&output).unwrap();
 }
 
+// TODO: make it work with new operands system
+///Moving stuff around
+///
+/// Endianness: BE
+///
+/// |           Dest            |                            Address (RAM)                             | Immediate (1 byte) |    LongImmediate (8 bytes)    |   LongerImmediate (9 bytes)   | Register | LongRegister |
+/// | :-----------------------: | :------------------------------------------------------------------: | :----------------: | :---------------------------: | :---------------------------: | :------: | :----------: |
+/// |       Address (RAM)       |                 copy (with specific number of bytes)                 |     mov (addr)     |          mov (addr+)          |         mov  (addr+)          |   mov    | mov  (addr+) |
+/// |    Immediate (1 byte)     |                                 N/A                                  |        N/A         |              N/A              |              N/A              |   N/A    |     N/A      |
+/// |  LongImmediate (8 bytes)  |                                 N/A                                  |        N/A         |              N/A              |              N/A              |   N/A    |     N/A      |
+/// | LongerImmediate (9 bytes) |                                 N/A                                  |        N/A         |              N/A              |              N/A              |   N/A    |     N/A      |
+/// |         Register          |                   mov (moves byte att addr to reg)                   |        mov         | trunc (low byte but like why) | trunc (low byte but like why) |   mov    |    trunc     |
+/// |       LongRegister        | copy (for 8 byte seq starting with addr) / ext (for 1 bytes at addr) |        ext         |              mov              |             trunc             |   ext    |     mov      |
 pub fn compile(line: &str) -> Vec<u8> {
     let parts = line.split(" ").collect::<Vec<&str>>();
     if parts.len() == 0 {
@@ -30,104 +45,30 @@ pub fn compile(line: &str) -> Vec<u8> {
 
     match op {
         "mov" => {  // instruction to move value to specified address in memory
-            if args.len() != 2 {
-                println!("Wrong number of arguments for mov. It's gonna be treated as noop");
-                return vec![0]
-            };
-
-            let arg1 = match parse_operand(args[0].to_string()) {
-                Ok(v) => v,
-                Err(e) => {
-                    println!("Parse error: {:?}. Treating as noop", e);
-                    return vec![0];
+            let result = parse_operands(args);
+            let (kinds, operands) = match result {
+                Ok((kinds, operands)) => {
+                    (kinds, operands)
                 }
-            };
-            let arg2 = match parse_operand(args[1].to_string()) {
-                Ok(v) => v,
                 Err(e) => {
-                    println!("Parse error: {:?}. Treating as noop", e);
+                    println!("Failed parsing operands: {:?}. Line is gonna be treated as noop", e);
                     return vec![0];
                 }
             };
 
-            match (arg1, arg2) {
-                (Operand::Address(addr1), Operand::Address(addr2)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(0);
-                    output.extend(addr1.to_be_bytes().to_vec());
-                    output.extend(addr2.to_be_bytes().to_vec());
-                    output
+            if !MOV_SIGNATURE.check(&kinds){
+                if kinds == vec![OperandKind::Immediate, OperandKind::LongRegister] {
+                    println!("Incorrect operands: You can't load immediate into long register with `mov` instruction.\nYou probably meant to use `movl` to load 8-byte immediate or `load` to load any other side")
                 }
-                (Operand::Address(addr), Operand::Register(reg)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(1);
-                    output.extend(addr.to_be_bytes().to_vec());
-                    output.push(reg.to_u8());
-                    output
+                else if kinds.iter().any(|x| *x == OperandKind::LongRegister) {
+                    println!("Incorrect operands: You can't manipulate long registers with `mov` instruction.\nTry `load` for non 8-length immediate values or `movl` for everything else\n{} is gonna be treated as noop", line);
+                } else {
+                    println!("Incorrect operands\n{} is gonna be treated as noop", line);
                 }
-                (Operand::Address(addr), Operand::LongRegister(reg)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(2);
-                    output.extend(addr.to_be_bytes().to_vec());
-                    output.push(reg.to_u8());
-                    output
-                }
-                (Operand::Register(reg), Operand::Address(addr)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(3);
-                    output.push(reg.to_u8());
-                    output.extend(addr.to_be_bytes().to_vec());
-                    output
-                }
-                (Operand::Register(reg1), Operand::Register(reg2)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(4);
-                    output.push(reg1.to_u8());
-                    output.push(reg2.to_u8());
-                    output
-                }
-                (Operand::Register(reg1), Operand::LongRegister(reg2)) => {
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(5);
-                    output.push(reg1.to_u8());
-                    output.push(reg2.to_u8());
-                    output
-                }
-                (Operand::Immediate(value), Operand::Register(reg)) => {
-                    if value > BigUint::from(u8::MAX) {
-                        println!("Immediate value should be 1 byte in size. Line's gonna be treated as noop");
-                        return vec![0];
-                    }
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(6);
-                    output.push(value.to_u8().unwrap());
-                    output.push(reg.to_u8());
-                    output
-                }
-                (Operand::Immediate(value), Operand::Address(addr)) => {
-                    if value > BigUint::from(u8::MAX) {
-                        println!("Immediate value should be 1 byte in size. Line's gonna be treated as noop");
-                        return vec![0];
-                    }
-                    let mut output = vec![];
-                    output.push(1);
-                    output.push(7);
-                    output.push(value.to_u8().unwrap());
-                    output.extend(addr.to_be_bytes().to_vec());
-                    output
-                }
-                (_, _) => {
-                    println!("Unknown/Illegal combination of operands for mov. Line's gonna be treated as noop");
-                    vec![0]
-                }
+                return vec![0];
             }
+
+            todo!()
         }
         "movl" => {  // 2
             if args.len() != 2 {
@@ -167,14 +108,14 @@ pub fn compile(line: &str) -> Vec<u8> {
                     output.push(2);
                     output.push(0);
                     output.extend(s);
-                    output.push(lr.to_u8());
+                    output.push(lr.to_bytecode());
                     output
                 }
                 (Operand::LongRegister(rl), Operand::Address(addr)) => {
                     let mut output = vec![];
                     output.push(2);
                     output.push(1);
-                    output.push(rl.to_u8());
+                    output.push(rl.to_bytecode());
                     output.extend(addr.to_be_bytes().to_vec());
                     output
                 }
@@ -182,8 +123,8 @@ pub fn compile(line: &str) -> Vec<u8> {
                     let mut output = vec![];
                     output.push(2);
                     output.push(2);
-                    output.push(rl1.to_u8());
-                    output.push(rl2.to_u8());
+                    output.push(rl1.to_bytecode());
+                    output.push(rl2.to_bytecode());
                     output
                 }
                 (_, _) => {
