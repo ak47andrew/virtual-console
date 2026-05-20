@@ -51,9 +51,9 @@ impl Emulator {
                 // Noop :P
             }
             1 => { // Mov
-                let addr = self.memory.read_u64();
-                let value = self.memory.read_u8();
-                self.memory.put(addr as usize, &[value]);
+                // let addr = self.memory.read_u64();
+                // let value = self.memory.read_u8();
+                // self.memory.put(addr as usize, &[value]);
             }
             2 => { // Movl
 

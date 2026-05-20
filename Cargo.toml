@@ -7,3 +7,5 @@ edition = "2024"
 raylib = { version = "5.5.1", features = [] }
 num-traits = "0.2.19"
 num-bigint = "0.4"
+once_cell = "1.21.4"
+unsigned-varint = "0.8.0"
