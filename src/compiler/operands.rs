@@ -98,6 +98,7 @@ impl Registers {
             Registers::X => {0x2}
             Registers::Y => {0x3}
             Registers::Z => {0x4}
+
             Registers::G1 => {0xA1}
             Registers::G2 => {0xA2}
             Registers::G3 => {0xA3}
@@ -108,7 +109,8 @@ impl Registers {
 }
 
 pub enum LongRegisters {
-    PC, LL,
+    PC, ADDR,
+    LL1, LL2,
     GP1, GP2, GP3,
 }
 
@@ -116,10 +118,14 @@ impl LongRegisters {
     pub fn to_bytecode(&self) -> u8 {
         match self {
             LongRegisters::PC => {0xB1}
-            LongRegisters::LL => {0xB2}
-            LongRegisters::GP1 => {0xC1}
-            LongRegisters::GP2 => {0xC2}
-            LongRegisters::GP3 => {0xC3}
+            LongRegisters::ADDR => {0xB2}
+
+            LongRegisters::LL1 => {0xC2}
+            LongRegisters::LL2 => {0xC3}
+
+            LongRegisters::GP1 => {0xD1}
+            LongRegisters::GP2 => {0xD2}
+            LongRegisters::GP3 => {0xD3}
         }
     }
 }
@@ -156,7 +162,9 @@ fn parse_operand(token: &&str) -> Result<Operand, ParseError> {
     if token.starts_with("?") {
         return match &token[1..] {
             "PC" => Ok(Operand::LongRegister(LongRegisters::PC)),
-            "LL" => Ok(Operand::LongRegister(LongRegisters::LL)),
+            "ADDR" => Ok(Operand::LongRegister(LongRegisters::ADDR)),
+            "LL1" => Ok(Operand::LongRegister(LongRegisters::LL1)),
+            "LL2" => Ok(Operand::LongRegister(LongRegisters::LL2)),
             "GP1" => Ok(Operand::LongRegister(LongRegisters::GP1)),
             "GP2" => Ok(Operand::LongRegister(LongRegisters::GP2)),
             "GP3" => Ok(Operand::LongRegister(LongRegisters::GP3)),
@@ -166,11 +174,6 @@ fn parse_operand(token: &&str) -> Result<Operand, ParseError> {
 
     Ok(parse_numerical_operand(token.to_string())?)
 }
-
-fn encode_operand(operand: Operand) -> Result<Vec<u8>, ParseError> {
-    Ok(vec![])
-}
-
 
 fn parse_numerical_operand(input: String) -> Result<Operand, ParseError> {
     let mut input = input;
@@ -226,7 +229,7 @@ fn parse_num(input: String) -> Result<BigUint, ParseError> {
         .map_err(|_| ParseError::InvalidNumber(input))
 }
 
-fn parse_u64_num(input: String) -> Result<u64, ParseError> {
+pub fn parse_u64_num(input: String) -> Result<u64, ParseError> {
     let operand = parse_numerical_operand(input.clone())?;
     match operand {
         Operand::LongImmediate(num) => Ok(num),
