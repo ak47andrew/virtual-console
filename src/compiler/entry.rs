@@ -31,6 +31,11 @@ pub fn compile(line: &str) -> Vec<u8> {
     let args = &parts[1..];
     
     // TODO: refactor bc of repetition
+    // TODO: math - sub, add, mul, div
+    // TODO: branching - jmp, jne, je
+    // TODO: functions - call, ret
+    // TODO: bitwise - and, ro, xor, not, shl, shr
+    // TODO: indirect referencing or whatever this called: [?LL1]
     match op {
         "hlt" => {  // Stop execution and enter endless loop
             vec![0x00]
