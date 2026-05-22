@@ -1,5 +1,5 @@
 pub mod entry;
-pub mod operands;
+pub mod parsing;
 pub mod operand_checking;
 
 #[derive(Debug)]
@@ -8,4 +8,5 @@ pub enum ParseError {
     InvalidNumber(String),
     InvalidOperand(String),
     InvalidAddress(String),
+    UnknownOpcode(String),
 }

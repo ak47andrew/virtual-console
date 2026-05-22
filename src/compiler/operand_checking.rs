@@ -1,6 +1,7 @@
-use crate::compiler::operands::OperandKind;
+use crate::shared::operand_types::OperandKind;
+use crate::shared::operand_types::OperandKind::{Address, Immediate, LongImmediate, LongRegister, LongerImmediate, Register};
 use once_cell::sync::Lazy;
-use crate::compiler::operands::OperandKind::{Address, Immediate, LongImmediate, LongRegister, LongerImmediate, Register};
+use crate::shared::opcodes::Opcode;
 
 pub struct InstructionSignature {
     pub operands_variations: Vec<Vec<OperandKind>>,
@@ -53,8 +54,27 @@ pub const COPY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     InstructionSignature {
         operands_variations: vec![
             vec![Immediate, Address, Address],
-            vec![LongRegister, Address, Address],
+            vec![LongImmediate, Address, Address],
             vec![LongerImmediate, Address, Address],
+            vec![Register, Address, Address],
+            vec![LongRegister, Address, Address],
         ]
     }
 });
+
+pub const EMPTY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![vec![]]
+    }
+});
+
+pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
+    match opcode {
+        Opcode::Noop => EMPTY_SIGNATURE,
+        Opcode::Hlt => EMPTY_SIGNATURE,
+        Opcode::Mov => MOV_SIGNATURE,
+        Opcode::Trunc => TRUNC_SIGNATURE,
+        Opcode::Ext => EXT_SIGNATURE,
+        Opcode::Copy => COPY_SIGNATURE
+    }
+}
