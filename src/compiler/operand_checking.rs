@@ -23,7 +23,7 @@ pub const MOV_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![LongRegister, Address],
             vec![Address, Register],
             vec![Register, Register],
-            vec![LongerImmediate, LongRegister],
+            vec![LongImmediate, LongRegister],
             vec![LongRegister, LongRegister]
         ]
     }

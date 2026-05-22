@@ -1,3 +1,4 @@
+#[derive(Eq, Hash, PartialEq)]
 pub enum Registers {
     A, X, Y, Z,
     G1, G2, G3, G4, G5,
@@ -33,8 +34,14 @@ impl Registers {
             _ => panic!("Uh... Corrupted program ig"),
         }
     }
+
+    pub fn all() -> Vec<Registers> {
+        vec![Registers::A, Registers::X, Registers::Y, Registers::Z,
+             Registers::G1, Registers::G2, Registers::G3, Registers::G4, Registers::G5]
+    }
 }
 
+#[derive(Eq, Hash, PartialEq)]
 pub enum LongRegisters {
     PC, ADDR,
     LL1, LL2,
@@ -67,5 +74,10 @@ impl LongRegisters {
             0xD3 => LongRegisters::GP3,
             _ => panic!("Uh... Corrupted program ig"),
         }
+    }
+
+    pub fn all() -> Vec<LongRegisters> {
+        vec![LongRegisters::PC, LongRegisters::ADDR, LongRegisters::LL1, LongRegisters::LL2,
+            LongRegisters::GP1, LongRegisters::GP2, LongRegisters::GP3]
     }
 }

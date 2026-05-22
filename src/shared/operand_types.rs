@@ -76,4 +76,11 @@ impl Operand {
             _ => panic!("Uh... Corrupted program ig")
         }
     }
+
+    pub fn unwrap_address(self) -> u64 {
+        match self {
+            Operand::Address(addr) => addr,
+            _ => panic!()
+        }
+    }
 }

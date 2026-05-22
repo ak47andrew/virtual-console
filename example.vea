@@ -1,0 +1,20 @@
+; Initial chunk
+mov ^0xFF0000FF00FF00FF0000FFFF $0
+; Copying it over and over until full screen (and quite a bit of RAM) is covered)
+copy ^12 $0 $12
+copy ^24 $0 $24
+copy ^48 $0 $48
+copy ^96 $0 $96
+copy ^192 $0 $192
+copy ^384 $0 $384
+copy ^768 $0 $768
+copy ^1536 $0 $1536
+copy ^3072 $0 $3072
+copy ^6144 $0 $6144
+copy ^12288 $0 $12288
+copy ^24576 $0 $24576
+copy ^49152 $0 $49152
+copy ^98304 $0 $98304
+copy ^196608 $0 $196608
+; just staring at it :3
+hlt

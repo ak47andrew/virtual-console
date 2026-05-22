@@ -1,9 +1,14 @@
+use std::collections::HashMap;
 use std::fs;
 use num_bigint::BigUint;
+use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
 use crate::consts::{RAM_SIZE, TARGET_RESOLUTION};
 use unsigned_varint::decode as varint;
+use unsigned_varint::decode::usize;
 use crate::shared::opcodes::Opcode;
+use crate::shared::operand_types::Operand;
+use crate::shared::registers::{LongRegisters, Registers};
 
 pub struct Emulator {
     memory: Memory,
@@ -54,10 +59,68 @@ impl Emulator {
             Opcode::Hlt => {
                 self.memory.move_pc(-1);  // read_u8 moves to forward, we bring it back to hlt
             }
-            Opcode::Mov => {todo!()}
+            Opcode::Mov => {
+                let src = Operand::from_bytes(&mut self.memory);
+                let dest = Operand::from_bytes(&mut self.memory);
+
+                match (src, dest) {
+                    (Operand::Immediate(v), Operand::Address(addr)) => {
+                        self.memory.put(addr as usize, &[v]);
+                    }
+                    (Operand::LongImmediate(v), Operand::Address(addr)) => {
+                        self.memory.put(addr as usize, &v.to_be_bytes());
+                    }
+                    (Operand::LongerImmediate(v), Operand::Address(addr)) => {
+                        self.memory.put(addr as usize, &v.to_be_bytes());
+                    }
+                    (Operand::Register(reg), Operand::Address(addr)) => {
+                        self.memory.put(addr as usize, &[self.memory.registers.registers[&reg]])
+                    }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        self.memory.put(addr as usize, &self.memory.registers.long_registers[&reg].to_be_bytes())
+                    }
+                    (Operand::Address(addr), Operand::Register(reg)) => {
+                        self.memory.registers.registers.insert(reg, self.memory.peek(addr as usize, 1)[0]);
+                    }
+                    (Operand::Register(reg1), Operand::Register(reg2)) => {
+                        self.memory.registers.registers.insert(reg1, self.memory.registers.registers[&reg2]);
+                    }
+                    (Operand::LongImmediate(v), Operand::LongRegister(reg)) => {
+                        self.memory.registers.long_registers.insert(reg, v);
+                    }
+                    (Operand::LongRegister(reg1), Operand::LongRegister(reg2)) => {
+                        self.memory.registers.long_registers.insert(reg1, self.memory.registers.long_registers[&reg2]);
+                    }
+                    (_, _) => panic!()
+                }
+            }
             Opcode::Trunc => {todo!()}
             Opcode::Ext => {todo!()}
-            Opcode::Copy => {todo!()}
+            Opcode::Copy => {
+                let length = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(v) => {BigUint::from(v)}
+                    Operand::LongImmediate(v) => {BigUint::from(v)}
+                    Operand::LongerImmediate(v) => {v}
+                    Operand::Register(reg) => {BigUint::from(self.memory.read_reg(reg))}
+                    Operand::LongRegister(reg) => {BigUint::from(self.memory.read_reg_long(reg))}
+                    _ => {panic!()}
+                };
+                let addr1 = Operand::from_bytes(&mut self.memory).unwrap_address();
+                let addr2 = Operand::from_bytes(&mut self.memory).unwrap_address();
+
+                let mut offset = BigUint::ZERO;
+                let mut remaining = length.clone();
+
+                while remaining > BigUint::ZERO {
+                    let chunk = remaining.clone().min(BigUint::from(usize::MAX)).to_usize().unwrap();
+                    self.memory.put(
+                        (addr2 + offset.to_u64().unwrap()) as usize,
+                        self.memory.peek((addr1 + offset.to_u64().unwrap()) as usize, chunk).as_slice()
+                    );
+                    offset += chunk;
+                    remaining -= chunk;
+                }
+            }
         }
     }
 }
@@ -69,13 +132,15 @@ impl Emulator {
 pub struct Memory {
     memory: Vec<u8>,
     pc: usize,
+    registers: RegisterMemory
 }
 
 impl Memory {
     pub fn new(rom_size: usize) -> Self {
         Self {
             memory: vec![0; Memory::vram_size() + RAM_SIZE + rom_size],
-            pc: Memory::rom_start()
+            pc: Memory::rom_start(),
+            registers: RegisterMemory::new()
         }
     }
 
@@ -148,5 +213,45 @@ impl Memory {
 
     pub fn move_pc(&mut self, offset: i32) {
         self.pc = (self.pc as i32 + offset) as usize;
+    }
+
+    pub fn write_reg(&mut self, reg: Registers, value: u8) {
+        self.registers.registers.insert(reg, value);
+    }
+
+    pub fn write_reg_long(&mut self, reg: LongRegisters, value: u64) {
+        self.registers.long_registers.insert(reg, value);
+    }
+
+    pub fn read_reg(&self, reg: Registers) -> u8 {
+        self.registers.registers[&reg]
+    }
+
+    pub fn read_reg_long(&self, reg: LongRegisters) -> u64 {
+        self.registers.long_registers[&reg]
+    }
+}
+
+pub struct RegisterMemory {
+    pub registers: HashMap<Registers, u8>,
+    pub long_registers: HashMap<LongRegisters, u64>,
+}
+
+impl RegisterMemory {
+    pub fn new() -> RegisterMemory {
+        let mut obj = RegisterMemory {
+            registers: HashMap::new(),
+            long_registers: HashMap::new(),
+        };
+
+        for reg in Registers::all() {
+            obj.registers.insert(reg, 0);
+        }
+
+        for reg in LongRegisters::all() {
+            obj.long_registers.insert(reg, 0);
+        }
+
+        obj
     }
 }

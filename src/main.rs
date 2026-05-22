@@ -28,7 +28,7 @@ fn main() {
         if args.len() == 0 {
             None
         } else {
-            Some(args[1].clone())
+            Some(args[0].clone())
         }
     );
     emulator.load_program_to_rom();
