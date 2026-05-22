@@ -138,7 +138,7 @@ pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str) -> Vec<u8> {
         }
     };
 
-    if get_signature(opcode).check(&kinds){
+    if !get_signature(opcode).check(&kinds){
         println!("Incorrect operands\n{} is gonna be treated as noop", line);
         return vec![0];
     }

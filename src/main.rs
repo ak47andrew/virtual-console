@@ -13,9 +13,7 @@ pub mod shared;
 
 fn main() {
     let mut args = env::args().collect::<Vec<String>>();
-    if args.len() != 0 && args[0].ends_with(".exe") {
-        args.remove(0);
-    }
+    args.remove(0);
     println!("{:?}", args);
     if args.len() == 2 && args[0] == "compile" {
         entry(args[1].as_str());
