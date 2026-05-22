@@ -5,16 +5,20 @@ use crate::compiler::entry::entry;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::emulator::Emulator;
 
-mod consts;
+pub mod consts;
 pub mod emulator;
-mod helper;
+pub mod helper;
 pub mod compiler;
+pub mod shared;
 
 fn main() {
-    let args = env::args().collect::<Vec<String>>();
+    let mut args = env::args().collect::<Vec<String>>();
+    if args.len() != 0 && args[0].ends_with(".exe") {
+        args.remove(0);
+    }
     println!("{:?}", args);
-    if args.len() == 3 && args[1] == "compile" {
-        entry(args[2].as_str());
+    if args.len() == 2 && args[0] == "compile" {
+        entry(args[1].as_str());
         return;
     }
     #[allow(unused_mut)]

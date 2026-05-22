@@ -1,6 +1,9 @@
 use std::fs;
+use num_bigint::BigUint;
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
 use crate::consts::{RAM_SIZE, TARGET_RESOLUTION};
+use unsigned_varint::decode as varint;
+use crate::shared::opcodes::Opcode;
 
 pub struct Emulator {
     memory: Memory,
@@ -46,32 +49,15 @@ impl Emulator {
     }
 
     pub fn step(&mut self) {
-        match self.memory.read_u8() {
-            0 => {
-                // Noop :P
+        match Opcode::from_bytecode(self.memory.read_u8()).unwrap() {
+            Opcode::Noop => {} // Noop
+            Opcode::Hlt => {
+                self.memory.move_pc(-1);  // read_u8 moves to forward, we bring it back to hlt
             }
-            1 => { // Mov
-                // let addr = self.memory.read_u64();
-                // let value = self.memory.read_u8();
-                // self.memory.put(addr as usize, &[value]);
-            }
-            2 => { // Movl
-
-            }
-            3 => { // Hlt
-                self.memory.move_pc(-1);  // read_u8 move it forward, we move it back
-            }
-            4 => { // Load
-                match self.memory.read_u8() {
-                    0 => {
-                        let n = self.memory.read_u8();
-                    }
-                    v => panic!("Unknown load-opcode: {}", v)
-                }
-            }
-            v => {
-                panic!("Unknown opcode: {}", v);
-            },
+            Opcode::Mov => {todo!()}
+            Opcode::Trunc => {todo!()}
+            Opcode::Ext => {todo!()}
+            Opcode::Copy => {todo!()}
         }
     }
 }
@@ -112,7 +98,7 @@ impl Memory {
         }
     }
 
-    pub fn read(&self, addr: usize, amount: usize) -> Vec<u8> {
+    pub fn peek(&self, addr: usize, amount: usize) -> Vec<u8> {
         let mut result = Vec::with_capacity(amount);
         let len = self.memory.len();
 
@@ -123,16 +109,37 @@ impl Memory {
         result
     }
 
+    pub fn read(&mut self, amount: usize) -> Vec<u8> {
+        let bytes = self.peek(self.pc, amount);
+        self.move_pc(amount as i32);
+        bytes
+    }
+
     pub fn read_u8(&mut self) -> u8 {
-        let output = self.read(self.pc, 1)[0];
-        self.pc += 1;
-        output
+        self.read(1)[0]
     }
 
     pub fn read_u64(&mut self) -> u64 {
-        let output = u64::from_be_bytes(self.read(self.pc, 8).try_into().unwrap());
-        self.pc += 8;
-        output
+        u64::from_be_bytes(self.read(8).try_into().unwrap())
+    }
+
+    fn _read_varint_usize(&mut self) -> usize {
+        let mut buf = [0u8; 10];
+        let mut i = 0;
+        loop {
+            let byte = self.read_u8();
+            buf[i] = byte;
+            i += 1;
+            if byte & 0x80 == 0 {break;}
+        }
+        varint::usize(&buf)
+            .map(|(val, _)| val)
+            .unwrap()
+    }
+
+    pub fn read_biguint(&mut self) -> BigUint {
+        let len = self._read_varint_usize();
+        BigUint::from_bytes_be(self.read(len).as_slice())
     }
 
     pub fn set_pc(&mut self, new_pc: usize) {
