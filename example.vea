@@ -16,5 +16,6 @@ copy ^24576 $0 $24576
 copy ^49152 $0 $49152
 copy ^98304 $0 $98304
 copy ^196608 $0 $196608
+vsync
 ; just staring at it :3
 hlt

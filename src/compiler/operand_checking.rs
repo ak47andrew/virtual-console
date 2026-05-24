@@ -72,6 +72,7 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
     match opcode {
         Opcode::Noop => EMPTY_SIGNATURE,
         Opcode::Hlt => EMPTY_SIGNATURE,
+        Opcode::Vsync => EMPTY_SIGNATURE,
         Opcode::Mov => MOV_SIGNATURE,
         Opcode::Trunc => TRUNC_SIGNATURE,
         Opcode::Ext => EXT_SIGNATURE,

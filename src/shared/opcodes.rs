@@ -2,7 +2,7 @@ use crate::compiler::ParseError;
 
 #[derive(Copy, Clone)]
 pub enum Opcode {
-    Noop, Hlt, 
+    Noop, Hlt, Vsync,
     Mov, Trunc, Ext, Copy
 }
 
@@ -11,6 +11,7 @@ impl Opcode {
         match self {
             Opcode::Noop => 0x00,
             Opcode::Hlt => 0x01,
+            Opcode::Vsync => 0x02,
             Opcode::Mov => 0x10,
             Opcode::Trunc => 0x11,
             Opcode::Ext => 0x12,
@@ -22,6 +23,7 @@ impl Opcode {
         match code {
             0x00 => Ok(Opcode::Noop),
             0x01 => Ok(Opcode::Hlt),
+            0x02 => Ok(Opcode::Vsync),
             0x10 => Ok(Opcode::Mov),
             0x11 => Ok(Opcode::Trunc),
             0x12 => Ok(Opcode::Ext),

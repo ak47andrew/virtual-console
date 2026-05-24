@@ -5,21 +5,22 @@ use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
 use crate::consts::{RAM_SIZE, TARGET_RESOLUTION};
 use unsigned_varint::decode as varint;
-use unsigned_varint::decode::usize;
+use unsigned_varint::decode::{u64, usize};
 use crate::shared::opcodes::Opcode;
 use crate::shared::operand_types::Operand;
 use crate::shared::registers::{LongRegisters, Registers};
 
 pub struct Emulator {
     memory: Memory,
-    program: Vec<u8>
+    program: Vec<u8>,
+    update_texture: bool,
 }
 
 impl Emulator {
     pub fn new(file: Option<String>) -> Self {
         let program = match file {
             None => {
-                vec![2u8]  // Instant hlt
+                vec![Opcode::Hlt.to_bytecode()]  // Instant hlt
             }
             Some(filename) => {
                 fs::read(filename).unwrap()
@@ -27,11 +28,16 @@ impl Emulator {
         };
         Self {
             memory: Memory::new(program.len()),
-            program
+            program,
+            update_texture: false,
         }
     }
 
-    pub fn update_frame(&self, texture: &mut Texture2D) {
+    pub fn update_frame(&mut self, texture: &mut Texture2D) {
+        if !self.update_texture {
+            return;
+        }
+        self.update_texture = false;
         let bytes = self.memory.vram();
 
         // Create a copy with forced alpha = 255
@@ -58,6 +64,9 @@ impl Emulator {
             Opcode::Noop => {} // Noop
             Opcode::Hlt => {
                 self.memory.move_pc(-1);  // read_u8 moves to forward, we bring it back to hlt
+            }
+            Opcode::Vsync => {
+                self.update_texture = true;
             }
             Opcode::Mov => {
                 let src = Operand::from_bytes(&mut self.memory);
@@ -94,8 +103,45 @@ impl Emulator {
                     (_, _) => panic!()
                 }
             }
-            Opcode::Trunc => {todo!()}
-            Opcode::Ext => {todo!()}
+            Opcode::Trunc => {
+                let src = Operand::from_bytes(&mut self.memory);
+                let dest = Operand::from_bytes(&mut self.memory);
+
+                match (src, dest) {
+                    (Operand::LongImmediate(v), Operand::Register(reg)) => {
+                        self.memory.write_reg(reg, *v.to_be_bytes().last().unwrap());
+                    }
+                    (Operand::LongerImmediate(v), Operand::Register(reg)) => {
+                        self.memory.write_reg(reg, *v.to_be_bytes().last().unwrap());
+                    }
+                    (Operand::LongRegister(reg1), Operand::Register(reg2)) => {
+                        self.memory.write_reg(reg2, *self.memory.read_reg_long(reg1).to_be_bytes().last().unwrap())
+                    }
+                    (Operand::LongerImmediate(v), Operand::LongRegister(reg)) => {
+                        let input = v.to_be_bytes();
+                        let (int_bytes, _) = input.split_at(size_of::<u64>());
+                        self.memory.write_reg_long(reg, u64::from_be_bytes(int_bytes.try_into().unwrap()))
+                    }
+                    (_, _) => panic!()
+                }
+            }
+            Opcode::Ext => {
+                let src = Operand::from_bytes(&mut self.memory);
+                let dest = Operand::from_bytes(&mut self.memory);
+
+                match (src, dest) {
+                    (Operand::Address(addr), Operand::LongRegister(reg)) => {
+                        self.memory.write_reg_long(reg, self.memory.peek(addr as usize, 1)[0] as u64)
+                    }
+                    (Operand::Immediate(val), Operand::LongRegister(reg)) => {
+                        self.memory.write_reg_long(reg, val as u64)
+                    }
+                    (Operand::Register(reg1), Operand::LongRegister(reg2)) => {
+                        self.memory.write_reg_long(reg2, self.memory.read_reg(reg1) as u64)
+                    }
+                    (_, _) => panic!()
+                }
+            }
             Opcode::Copy => {
                 let length = match Operand::from_bytes(&mut self.memory) {
                     Operand::Immediate(v) => {BigUint::from(v)}
@@ -126,9 +172,9 @@ impl Emulator {
 }
 
 /// Memory layout looks like this (everything is given in bytes):
-/// 0-245760: VRAM (245760 = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 (Channels: RGBA (bc Raylib, A always 255)))
-/// 245761-501761: RAM (RAM_SIZE)
-/// 501762+: ROM (everything else, aka rom_size)
+/// - 0-245760: VRAM (245760 = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 (Channels: RGBA (bc Raylib, A always 255)))
+/// - 245761-501761: RAM (RAM_SIZE)
+/// - 501762+: ROM (everything else, aka rom_size)
 pub struct Memory {
     memory: Vec<u8>,
     pc: usize,

@@ -60,6 +60,7 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
         "trunc" => Ok(Opcode::Trunc),
         "ext" => Ok(Opcode::Ext),
         "copy" => Ok(Opcode::Copy),
+        "vsync" => Ok(Opcode::Vsync),
         _ => Err(ParseError::UnknownOpcode(token.to_string()))
     }
 }
