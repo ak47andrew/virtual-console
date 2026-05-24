@@ -56,11 +56,25 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
     match token { 
         "noop" => Ok(Opcode::Noop),
         "hlt" => Ok(Opcode::Hlt),
+        "vsync" => Ok(Opcode::Vsync),
+
         "mov" => Ok(Opcode::Mov),
         "trunc" => Ok(Opcode::Trunc),
         "ext" => Ok(Opcode::Ext),
         "copy" => Ok(Opcode::Copy),
-        "vsync" => Ok(Opcode::Vsync),
+
+        "add" => Ok(Opcode::Add),
+        "sub" => Ok(Opcode::Sub),
+        "mul" => Ok(Opcode::Mul),
+        "div" => Ok(Opcode::Div),
+
+        "and" => Ok(Opcode::And),
+        "or" => Ok(Opcode::Or),
+        "xor" => Ok(Opcode::Xor),
+        "not" => Ok(Opcode::Not),
+        "shl" => Ok(Opcode::Shl),
+        "shr" => Ok(Opcode::Shr),
+
         _ => Err(ParseError::UnknownOpcode(token.to_string()))
     }
 }

@@ -38,7 +38,7 @@ fn main() {
 
     while !rl.window_should_close() {
         emulator.step();
-        emulator.update_frame(&mut texture);
+        emulator.new_frame(&mut texture);
 
         let mut d = rl.begin_drawing(&thread);
 

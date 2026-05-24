@@ -10,8 +10,8 @@ pub enum OperandKind {
     Immediate,  // 1 byte
     LongImmediate,  // 8 bytes
     LongerImmediate, // 9+ bytes
-    Register,
-    LongRegister
+    Register,  // 1 byte
+    LongRegister // 8 bytes
 }
 
 pub enum Operand {

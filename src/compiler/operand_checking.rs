@@ -22,6 +22,7 @@ pub const MOV_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![Register, Address],
             vec![LongRegister, Address],
             vec![Address, Register],
+            vec![Address, LongRegister],
             vec![Register, Register],
             vec![LongImmediate, LongRegister],
             vec![LongRegister, LongRegister]
@@ -62,6 +63,55 @@ pub const COPY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     }
 });
 
+pub const BINARY_MATH_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate, Immediate],  // 1 byte
+            vec![LongImmediate, LongImmediate],  // 8 bytes
+            vec![Register, Register],  // 1 byte
+            vec![LongRegister, LongRegister], // 8 bytes
+            vec![Immediate, Register],
+            vec![Register, Immediate],
+            vec![LongImmediate, LongRegister],
+            vec![LongRegister, LongImmediate],
+        ]
+    }
+});
+
+pub const NOT_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate],
+            vec![LongImmediate],
+            vec![Register],
+            vec![LongRegister]
+        ]
+    }
+});
+
+pub const SHIFTS_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            // 1 byte by 1 byte
+            vec![Immediate, Immediate],
+            vec![Register, Immediate],
+            vec![Immediate, Register],
+
+            // 8 bytes by 1 byte
+            vec![LongImmediate, Immediate],
+            vec![LongImmediate, Register],
+            vec![LongRegister, Immediate],
+            vec![LongRegister, Register],
+
+            // 8 bytes by 8 bytes
+            vec![LongRegister, LongRegister],
+            vec![LongRegister, LongImmediate],
+            vec![LongImmediate, LongRegister],
+            vec![LongImmediate, LongImmediate],
+        ]
+    }
+});
+
 pub const EMPTY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     InstructionSignature {
         operands_variations: vec![vec![]]
@@ -76,6 +126,16 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::Mov => MOV_SIGNATURE,
         Opcode::Trunc => TRUNC_SIGNATURE,
         Opcode::Ext => EXT_SIGNATURE,
-        Opcode::Copy => COPY_SIGNATURE
+        Opcode::Copy => COPY_SIGNATURE,
+        Opcode::Add => BINARY_MATH_SIGNATURE,
+        Opcode::Sub => BINARY_MATH_SIGNATURE,
+        Opcode::Mul => BINARY_MATH_SIGNATURE,
+        Opcode::Div => BINARY_MATH_SIGNATURE,
+        Opcode::And => BINARY_MATH_SIGNATURE,
+        Opcode::Or => BINARY_MATH_SIGNATURE,
+        Opcode::Xor => BINARY_MATH_SIGNATURE,
+        Opcode::Not => NOT_SIGNATURE,
+        Opcode::Shr => SHIFTS_SIGNATURE,
+        Opcode::Shl => SHIFTS_SIGNATURE,
     }
 }
