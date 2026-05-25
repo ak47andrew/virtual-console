@@ -1,23 +1,29 @@
+use std::collections::HashMap;
 use num_bigint::BigUint;
 use num_traits::{Num, ToPrimitive};
-use crate::compiler::operand_checking::{get_signature, MOV_SIGNATURE};
+use crate::compiler::operand_checking::get_signature;
 use crate::compiler::ParseError;
+use crate::emulator::memory::Memory;
 use crate::shared::opcodes::Opcode;
 use crate::shared::operand_types::{Operand, OperandKind};
 use crate::shared::registers::{LongRegisters, Registers};
 
-pub fn parse_operands(args: &[&str]) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
+pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
     let mut kinds = Vec::new();
     let mut operands = Vec::new();
     for arg in args {
-        let operand = parse_operand(arg)?;
+        let operand = parse_operand(arg, labels, is_first_pass)?;
         kinds.push(operand.kind());
         operands.push(operand);
     }
     Ok((kinds, operands))
 }
 
-fn parse_operand(token: &&str) -> Result<Operand, ParseError> {
+fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<Operand, ParseError> {
+    if labels.contains_key(*token) {
+        return Ok(Operand::Address(*labels.get(*token).unwrap() + Memory::rom_start() as u64))
+    }
+
     if token.starts_with("$") {
         return Ok(Operand::Address(parse_u64_num(token[1..].to_string())?))
     }
@@ -39,7 +45,6 @@ fn parse_operand(token: &&str) -> Result<Operand, ParseError> {
     if token.starts_with("?") {
         return match &token[1..] {
             "PC" => Ok(Operand::LongRegister(LongRegisters::PC)),
-            "ADDR" => Ok(Operand::LongRegister(LongRegisters::ADDR)),
             "LL1" => Ok(Operand::LongRegister(LongRegisters::LL1)),
             "LL2" => Ok(Operand::LongRegister(LongRegisters::LL2)),
             "GP1" => Ok(Operand::LongRegister(LongRegisters::GP1)),
@@ -48,8 +53,24 @@ fn parse_operand(token: &&str) -> Result<Operand, ParseError> {
             _ => Err(ParseError::InvalidRegister(token.to_string())),
         }
     }
+    if token.starts_with("[") && token.ends_with("]") {
+        let reg_str = &token[1..token.len() - 1];
+        return match parse_operand(&reg_str, labels, is_first_pass)? {
+            Operand::LongRegister(reg) => Ok(Operand::IndirectAddress(reg)),
+            _ => Err(ParseError::InvalidOperand(token.to_string())),
+        };
+    }
 
-    Ok(parse_numerical_operand(token.to_string())?)
+    match parse_numerical_operand(token.to_string()) {
+        Ok(v) => {Ok(v)}
+        Err(e) => {
+            if is_first_pass {
+                Ok(Operand::Address(0))
+            } else {
+                Err(e)
+            }
+        }
+    }
 }
 
 pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
@@ -74,6 +95,10 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
         "not" => Ok(Opcode::Not),
         "shl" => Ok(Opcode::Shl),
         "shr" => Ok(Opcode::Shr),
+
+        "jmp" => Ok(Opcode::Jmp),
+        "je" => Ok(Opcode::Je),
+        "jne" => Ok(Opcode::Jne),
 
         _ => Err(ParseError::UnknownOpcode(token.to_string()))
     }
@@ -141,8 +166,8 @@ pub fn parse_u64_num(input: String) -> Result<u64, ParseError> {
     }
 }
 
-pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str) -> Vec<u8> {
-    let result = parse_operands(args);
+pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Vec<u8> {
+    let result = parse_operands(args, labels, is_first_pass);
     let (kinds, operands) = match result {
         Ok((kinds, operands)) => {
             (kinds, operands)

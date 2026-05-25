@@ -1,7 +1,7 @@
 use num_bigint::BigUint;
 use num_traits::ToBytes;
 use unsigned_varint::encode as varint;
-use crate::emulator::emulator::Memory;
+use crate::emulator::memory::Memory;
 use crate::shared::registers::{LongRegisters, Registers};
 
 #[derive(PartialEq)]
@@ -11,7 +11,8 @@ pub enum OperandKind {
     LongImmediate,  // 8 bytes
     LongerImmediate, // 9+ bytes
     Register,  // 1 byte
-    LongRegister // 8 bytes
+    LongRegister, // 8 bytes
+    IndirectAddress // Address taken from LongRegister
 }
 
 pub enum Operand {
@@ -21,6 +22,7 @@ pub enum Operand {
     LongerImmediate(BigUint),
     Register(Registers),
     LongRegister(LongRegisters),
+    IndirectAddress(LongRegisters),
 }
 
 impl Operand {
@@ -32,6 +34,7 @@ impl Operand {
             Operand::LongerImmediate(_) => OperandKind::LongerImmediate,
             Operand::Register(_) => OperandKind::Register,
             Operand::LongRegister(_) => OperandKind::LongRegister,
+            Operand::IndirectAddress(_) => OperandKind::IndirectAddress,
         }
     }
 
@@ -62,6 +65,7 @@ impl Operand {
             }
             Operand::Register(reg) => {vec![0x10, reg.to_bytecode()]}
             Operand::LongRegister(reg) => {vec![0x11, reg.to_bytecode()]}
+            Operand::IndirectAddress(reg) => vec![0x12, reg.to_bytecode()]
         }
     }
 
@@ -73,13 +77,15 @@ impl Operand {
             0xAD => Operand::Address(memory.read_u64()),
             0x10 => Operand::Register(Registers::from_bytecode(memory.read_u8())),
             0x11 => Operand::LongRegister(LongRegisters::from_bytecode(memory.read_u8())),
+            0x12 => Operand::IndirectAddress(LongRegisters::from_bytecode(memory.read_u8())),
             _ => panic!("Uh... Corrupted program ig")
         }
     }
 
-    pub fn unwrap_address(self) -> u64 {
+    pub fn unwrap_address(self, memory: &Memory) -> u64 {
         match self {
             Operand::Address(addr) => addr,
+            Operand::IndirectAddress(reg) => memory.read_reg_long(reg),
             _ => panic!()
         }
     }

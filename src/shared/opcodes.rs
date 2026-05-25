@@ -5,7 +5,8 @@ pub enum Opcode {
     Noop, Hlt, Vsync,
     Mov, Trunc, Ext, Copy,
     Add, Sub, Mul, Div,
-    And, Or, Xor, Not, Shr, Shl
+    And, Or, Xor, Not, Shr, Shl,
+    Jmp, Je, Jne
 }
 
 impl Opcode {
@@ -31,6 +32,10 @@ impl Opcode {
             Opcode::Not => 0x33,
             Opcode::Shl => 0x34,
             Opcode::Shr => 0x35,
+
+            Opcode::Jmp => 0x40,
+            Opcode::Je => 0x41,
+            Opcode::Jne => 0x42,
         }
     }
     
@@ -53,6 +58,9 @@ impl Opcode {
             0x33 => Ok(Opcode::Not),
             0x34 => Ok(Opcode::Shl),
             0x35 => Ok(Opcode::Shr),
+            0x40 => Ok(Opcode::Jmp),
+            0x41 => Ok(Opcode::Je),
+            0x42 => Ok(Opcode::Jne),
             _ => Err(ParseError::UnknownOpcode(code.to_string()))
         }
     }

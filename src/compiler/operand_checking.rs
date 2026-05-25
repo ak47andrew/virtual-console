@@ -1,5 +1,5 @@
 use crate::shared::operand_types::OperandKind;
-use crate::shared::operand_types::OperandKind::{Address, Immediate, LongImmediate, LongRegister, LongerImmediate, Register};
+use crate::shared::operand_types::OperandKind::{Address, Immediate, IndirectAddress, LongImmediate, LongRegister, LongerImmediate, Register};
 use once_cell::sync::Lazy;
 use crate::shared::opcodes::Opcode;
 
@@ -21,6 +21,13 @@ pub const MOV_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![LongerImmediate, Address],
             vec![Register, Address],
             vec![LongRegister, Address],
+
+            vec![Immediate, IndirectAddress],
+            vec![LongImmediate, IndirectAddress],
+            vec![LongerImmediate, IndirectAddress],
+            vec![Register, IndirectAddress],
+            vec![LongRegister, IndirectAddress],
+
             vec![Address, Register],
             vec![Address, LongRegister],
             vec![Register, Register],
@@ -59,6 +66,24 @@ pub const COPY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![LongerImmediate, Address, Address],
             vec![Register, Address, Address],
             vec![LongRegister, Address, Address],
+
+            vec![Immediate, IndirectAddress, Address],
+            vec![LongImmediate, IndirectAddress, Address],
+            vec![LongerImmediate, IndirectAddress, Address],
+            vec![Register, IndirectAddress, Address],
+            vec![LongRegister, IndirectAddress, Address],
+
+            vec![Immediate, Address, IndirectAddress],
+            vec![LongImmediate, Address, IndirectAddress],
+            vec![LongerImmediate, Address, IndirectAddress],
+            vec![Register, Address, IndirectAddress],
+            vec![LongRegister, Address, IndirectAddress],
+
+            vec![Immediate, IndirectAddress, IndirectAddress],
+            vec![LongImmediate, IndirectAddress, IndirectAddress],
+            vec![LongerImmediate, IndirectAddress, IndirectAddress],
+            vec![Register, IndirectAddress, IndirectAddress],
+            vec![LongRegister, IndirectAddress, IndirectAddress],
         ]
     }
 });
@@ -112,6 +137,26 @@ pub const SHIFTS_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     }
 });
 
+pub const JMP_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Address],
+            vec![IndirectAddress]
+        ]
+    }
+});
+
+pub const CONDITIONAL_JUMP_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Register, Address],
+            vec![Register, IndirectAddress],
+            vec![LongRegister, Address],
+            vec![LongRegister, IndirectAddress],
+        ]
+    }
+});
+
 pub const EMPTY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     InstructionSignature {
         operands_variations: vec![vec![]]
@@ -137,5 +182,8 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::Not => NOT_SIGNATURE,
         Opcode::Shr => SHIFTS_SIGNATURE,
         Opcode::Shl => SHIFTS_SIGNATURE,
+        Opcode::Jmp => JMP_SIGNATURE,
+        Opcode::Je => CONDITIONAL_JUMP_SIGNATURE,
+        Opcode::Jne => CONDITIONAL_JUMP_SIGNATURE,
     }
 }

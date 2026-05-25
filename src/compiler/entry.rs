@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Write;
 use crate::compiler::ParseError;
 use crate::compiler::parsing::{encode_opcode, parse_opcode};
@@ -7,10 +8,24 @@ pub fn entry(file: &str) {
     let file_content = std::fs::read_to_string(file).unwrap();
     let lines = file_content.lines().collect::<Vec<&str>>();
 
+    // Pass 1
+    let mut labels: HashMap<String, u64> = HashMap::new();
+    let mut offset: u64 = 0;
+    for line in &lines {
+        let line = line.trim();
+        if line.starts_with(";") { continue; }
+        if let Some(label) = line.strip_suffix(":") {
+            labels.insert(label.to_string(), offset);
+        } else {
+            offset += compile(line, &labels, true).len() as u64;
+        }
+    }
+
+    // Pass 2
     let mut output = vec![];
-    for line in lines {
-        if line.starts_with(";") {continue;}
-        output.extend(compile(line))
+    for line in &lines {
+        if line.starts_with(";") || line.ends_with(":") {continue;}
+        output.extend(compile(line, &labels, false));
     }
 
     let mut file = std::fs::File::create(
@@ -19,22 +34,17 @@ pub fn entry(file: &str) {
     file.write_all(&output).unwrap();
 }
 
-pub fn compile(line: &str) -> Vec<u8> {
+pub fn compile(line: &str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Vec<u8> {
     let parts = line.split(" ").collect::<Vec<&str>>();
-    if parts.len() == 0 {
+    if parts[0] == "" {
         return vec![];
     }
     let op = parts[0];
     let args = &parts[1..];
-    
-    // TODO: math - sub, add, mul, div
-    // TODO: branching - jmp, jne, je
-    // TODO: functions - call, ret
-    // TODO: bitwise - and, ro, xor, not, shl, shr
-    // TODO: indirect referencing or whatever this called: [?LL1]
+
     match parse_opcode(op) {
         Ok(opcode) => {
-            encode_opcode(opcode, args, line)
+            encode_opcode(opcode, args, line, labels, is_first_pass)
         }
         Err(e) => {
             match e {
