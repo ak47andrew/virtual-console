@@ -6,21 +6,23 @@ use unsigned_varint::decode as varint;
 
 /// Memory layout looks like this (everything is given in bytes):
 /// - 0-245760: VRAM (245760 = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 (Channels: RGBA (bc Raylib, A always 255)))
-/// - 245761-501761: RAM (RAM_SIZE)
+/// - 245761-501759: RAM (RAM_SIZE)
+/// - 501760: INPUT_HELD
+/// - 501761: INPUT_PRESSED
 /// - 501762+: ROM (everything else, aka rom_size)
 pub struct Memory {
     memory: Vec<u8>,
-    pub pc: usize,
     registers: RegisterMemory
 }
 
 impl Memory {
     pub fn new(rom_size: usize) -> Self {
-        Self {
+        let mut obj = Self {
             memory: vec![0; Memory::vram_size() + RAM_SIZE + rom_size],
-            pc: Memory::rom_start(),
             registers: RegisterMemory::new()
-        }
+        };
+        obj.set_pc(Memory::rom_start());
+        obj
     }
 
     pub fn vram(&self) -> &[u8] {
@@ -33,6 +35,14 @@ impl Memory {
 
     pub fn rom_start() -> usize {
         Memory::vram_size() + RAM_SIZE
+    }
+
+    pub fn input_pressed() -> usize {
+        Memory::rom_start() - 1
+    }
+
+    pub fn input_held() -> usize {
+        Memory::rom_start() - 2
     }
 
     pub fn put(&mut self, addr: usize, data: &[u8]) {
@@ -63,7 +73,7 @@ impl Memory {
     }
 
     pub fn read(&mut self, amount: usize) -> Cow<[u8]> {
-        let addr = self.pc;
+        let addr = self.read_pc();
         self.move_pc(amount as i32);
         self.peek(addr, amount)
     }
@@ -96,11 +106,15 @@ impl Memory {
     }
 
     pub fn set_pc(&mut self, new_pc: usize) {
-        self.pc = new_pc;
+        self.write_reg_long(LongRegisters::PC, new_pc as u64);
+    }
+
+    pub fn read_pc(&self) -> usize {
+        self.read_reg_long(LongRegisters::PC) as usize
     }
 
     pub fn move_pc(&mut self, offset: i32) {
-        self.pc = (self.pc as i32 + offset) as usize;
+        self.set_pc((self.read_pc() as i32 + offset) as usize);
     }
 
     pub fn write_reg(&mut self, reg: Registers, value: u8) {
@@ -128,8 +142,8 @@ pub struct RegisterMemory {
 impl RegisterMemory {
     pub fn new() -> RegisterMemory {
         RegisterMemory {
-            registers: [0; _],
-            long_registers: [0; _],
+            registers: [0; 0x8 + 1],
+            long_registers: [0; 0x5 + 1],
         }
     }
 }

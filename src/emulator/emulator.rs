@@ -2,6 +2,8 @@ use std::fs;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
+use raylib::prelude::KeyboardKey::{KEY_C, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_X, KEY_Z};
+use raylib::RaylibHandle;
 use crate::consts::TARGET_RESOLUTION;
 use crate::emulator::memory::Memory;
 use crate::shared::opcodes::Opcode;
@@ -31,14 +33,18 @@ impl Emulator {
         }
     }
 
-    pub fn new_frame(&mut self, texture: &mut Texture2D) {
+    pub fn new_frame(&mut self, texture: &mut Texture2D, rl: &RaylibHandle) {
         if !self.update_texture {
             return;
         }
         self.update_texture = false;
 
         // Input time
-        // TODO
+        if self._get_held(rl) != 0 {
+            println!("{:b}", self._get_held(rl));
+        }
+        self.memory.put(Memory::input_held(), &[self._get_held(rl)]);
+        self.memory.put(Memory::input_pressed(), &[self._get_pressed(rl)]);
 
         // Update VRAM
         let bytes = self.memory.vram();
@@ -52,6 +58,22 @@ impl Emulator {
         texture.update_texture(&opaque_bytes).expect("Failed to update texture");
     }
 
+    pub fn _get_pressed(&self, rl: &RaylibHandle) -> u8 {
+        let mut out = 0u8;
+        for (ind, val) in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_Z, KEY_X, KEY_C, KEY_SPACE].iter().enumerate() {
+            out |= (if rl.is_key_pressed(*val) { 1 } else {0}) << (7 - ind);
+        }
+        out
+    }
+
+    pub fn _get_held(&self, rl: &RaylibHandle) -> u8 {
+        let mut out = 0u8;
+        for (ind, val) in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_Z, KEY_X, KEY_C, KEY_SPACE].iter().enumerate() {
+            out |= (if rl.is_key_down(*val) { 1 } else {0}) << (7 - ind);
+        }
+        out
+    }
+
     pub fn put_pixel(&mut self, x: i32, y: i32, color: Color) {
         self.memory.put(((y * TARGET_RESOLUTION.x + x) * 4) as usize, &[
             color.r, color.g, color.b, 255
@@ -59,7 +81,7 @@ impl Emulator {
     }
 
     pub fn load_program_to_rom(&mut self) {
-        self.memory.put(self.memory.pc, self.program.as_slice());
+        self.memory.put(self.memory.read_pc(), self.program.as_slice());
     }
 
     pub fn step(&mut self) {
@@ -108,6 +130,7 @@ impl Emulator {
                         self.memory.put(self.memory.read_reg_long(reg2) as usize, &self.memory.read_reg_long(reg1).to_be_bytes())
                     }
                     (Operand::Address(addr), Operand::Register(reg)) => {
+                        println!("{:?}", self.memory.peek(addr as usize, 1));
                         self.memory.write_reg(reg, self.memory.peek(addr as usize, 1)[0])
                     }
                     (Operand::Address(addr), Operand::LongRegister(reg)) => {
@@ -121,6 +144,9 @@ impl Emulator {
                     }
                     (Operand::LongRegister(reg1), Operand::LongRegister(reg2)) => {
                         self.memory.write_reg_long(reg2, self.memory.read_reg_long(reg1))
+                    }
+                    (Operand::Immediate(v), Operand::Register(reg)) => {
+                        self.memory.write_reg(reg, v);
                     }
                     (_, _) => panic!()
                 }
