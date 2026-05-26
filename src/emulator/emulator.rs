@@ -1,4 +1,4 @@
-use std::fs;
+use std::io::Error;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
@@ -11,38 +11,34 @@ use crate::shared::operand_types::Operand;
 use crate::shared::registers::{LongRegisters, Registers};
 
 pub struct Emulator {
-    memory: Memory,
+    pub memory: Memory,
     program: Vec<u8>,
-    update_texture: bool,
+    pub update_texture: bool,
 }
 
 impl Emulator {
-    pub fn new(file: Option<String>) -> Self {
-        let program = match file {
-            None => {
-                vec![Opcode::Hlt.to_bytecode()]  // Instant hlt
-            }
-            Some(filename) => {
-                fs::read(filename).unwrap()
-            }
-        };
+    pub fn new() -> Self {
         Self {
-            memory: Memory::new(program.len()),
-            program,
+            memory: Memory::new(0),  // Dummy until load_program is called
+            program: vec![],
             update_texture: false,
         }
     }
 
-    pub fn new_frame(&mut self, texture: &mut Texture2D, rl: &RaylibHandle) {
+    pub fn load_program_to_rom(&mut self, program: Result<Vec<u8>, Error>) {
+        let program = program.unwrap_or_else(|_| vec![Opcode::Hlt.to_bytecode()]);
+        self.program = program;
+        self.memory = Memory::new(self.program.len());
+        self.memory.put(self.memory.read_pc(), self.program.as_slice());
+    }
+
+    pub fn new_frame(&mut self, texture: &mut Texture2D, rl: &RaylibHandle) -> bool {
         if !self.update_texture {
-            return;
+            return false;
         }
         self.update_texture = false;
 
         // Input time
-        if self._get_held(rl) != 0 {
-            println!("{:b}", self._get_held(rl));
-        }
         self.memory.put(Memory::input_held(), &[self._get_held(rl)]);
         self.memory.put(Memory::input_pressed(), &[self._get_pressed(rl)]);
 
@@ -56,6 +52,7 @@ impl Emulator {
         }
 
         texture.update_texture(&opaque_bytes).expect("Failed to update texture");
+        true
     }
 
     pub fn _get_pressed(&self, rl: &RaylibHandle) -> u8 {
@@ -80,15 +77,10 @@ impl Emulator {
         ])
     }
 
-    pub fn load_program_to_rom(&mut self) {
-        self.memory.put(self.memory.read_pc(), self.program.as_slice());
-    }
-
     pub fn step(&mut self) {
         match Opcode::from_bytecode(self.memory.read_u8()).unwrap() {
             Opcode::Noop => {} // Noop
             Opcode::Hlt => {
-                println!("HALT");
                 self.memory.move_pc(-1);  // read_u8 moves to forward, we bring it back to hlt
             }
             Opcode::Vsync => {
@@ -130,7 +122,6 @@ impl Emulator {
                         self.memory.put(self.memory.read_reg_long(reg2) as usize, &self.memory.read_reg_long(reg1).to_be_bytes())
                     }
                     (Operand::Address(addr), Operand::Register(reg)) => {
-                        println!("{:?}", self.memory.peek(addr as usize, 1));
                         self.memory.write_reg(reg, self.memory.peek(addr as usize, 1)[0])
                     }
                     (Operand::Address(addr), Operand::LongRegister(reg)) => {

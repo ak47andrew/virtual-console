@@ -45,6 +45,10 @@ impl Memory {
         Memory::rom_start() - 2
     }
 
+    pub fn total_size(&self) -> usize {
+        self.memory.len()
+    }
+
     pub fn put(&mut self, addr: usize, data: &[u8]) {
         let end = addr + data.len();
         if end <= self.memory.len() {

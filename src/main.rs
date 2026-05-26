@@ -1,8 +1,9 @@
-use std::env;
-use raylib::init;
+use std::{env, fs};
+use raylib::{init, RaylibHandle, RaylibThread};
 use raylib::prelude::{Color, Image, RaylibDraw, RaylibTexture2D, Rectangle, TextureFilter, Vector2};
-use crate::compiler::entry::entry;
+use crate::compiler::entry::entry_compiler;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
+use crate::emulator::debugger::entry_debugger;
 use crate::emulator::emulator::Emulator;
 
 pub mod consts;
@@ -14,26 +15,31 @@ pub mod shared;
 fn main() {
     let mut args = env::args().collect::<Vec<String>>();
     args.remove(0);
-    println!("{:?}", args);
     if args.len() == 2 && args[0] == "compile" {
-        entry(args[1].as_str());
+        entry_compiler(args[1].as_str());
         return;
     }
+
     #[allow(unused_mut)]
     let (mut rl, mut thread) = init()
         .size(SCREEN_SIZE.x, SCREEN_SIZE.y)
         .title("Rust Raylib")
         .build();
-    let mut emulator = Emulator::new(
-        if args.len() == 0 {
-            None
-        } else {
-            Some(args[0].clone())
-        }
-    );
-    emulator.load_program_to_rom();
+    let mut emulator = Emulator::new();
+
+    if args.len() > 0 && args[0] == "debug" {
+        emulator.load_program_to_rom(fs::read(args.get(1).unwrap_or(&"".to_string())));
+        entry_debugger(rl, thread, emulator);
+    } else {
+        emulator.load_program_to_rom(fs::read(args.get(0).unwrap_or(&"".to_string())));
+        entry_emulator(rl, thread, emulator);
+    }
+}
+
+#[allow(unused_mut)]
+pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulator: Emulator) {
     let mut texture = rl.load_texture_from_image(&thread,
-         &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
+                                                 &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
 
     while !rl.window_should_close() {

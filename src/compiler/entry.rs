@@ -3,7 +3,7 @@ use std::io::Write;
 use crate::compiler::ParseError;
 use crate::compiler::parsing::{encode_opcode, parse_opcode};
 
-pub fn entry(file: &str) {
+pub fn entry_compiler(file: &str) {
     // file ends in .vea (virtual emulator assembly)
     let file_content = std::fs::read_to_string(file).unwrap();
     let lines = file_content.lines().collect::<Vec<&str>>();

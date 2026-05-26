@@ -1,4 +1,4 @@
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Copy, Clone)]
 pub enum Registers {
     A, X, Y, Z,
     G1, G2, G3, G4, G5,
@@ -41,7 +41,7 @@ impl Registers {
     }
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Copy, Clone)]
 pub enum LongRegisters {
     PC,
     LL1, LL2,
