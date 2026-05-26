@@ -1,0 +1,33 @@
+; WARNING! It's hella slow: 10-15 minutes of runtime. Just for demonstration purposes
+; Setup. GP1 is a pixel, GP2 is an address pointing to VRAM
+mov &0x00000000000000FF ?GP1
+mov &0 ?GP2
+
+loop:
+; All math is done on lower 32 bits, but to draw a pixel at address we need it at higher 32 so we shift it left
+shl ?GP1 &32
+; Set the actual pixel
+mov ?LL1 [?GP2]
+; Display progress
+vsync
+
+; Incrementing color pixel
+add ?GP1 &1
+; Ensuring alpha is 255
+or ?LL1 &0x000000FF
+; Storing it back
+mov ?LL1 ?GP1
+
+; Moving to the next pixel in VRAM (pixel is 4 bytes long)
+add ?GP2 &4
+mov ?LL1 ?GP2
+
+; If we're at the end of VRAM - stop
+sub &245760 ?GP2
+je !Z exit
+
+; Otherwise - repeat
+jmp loop
+
+exit:
+hlt

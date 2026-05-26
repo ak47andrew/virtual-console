@@ -2,4 +2,8 @@
 .idea/
 *.vea
 *.veb
-!example.vea
+!examples/*.vea
+
+flamegraph.svg
+perf.data
+perf.data.old
