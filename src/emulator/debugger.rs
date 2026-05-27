@@ -39,6 +39,7 @@ const C_TOG_ON: Color   = Color { r: 50,  g: 170, b: 70,  a: 255 };
 const C_TOG_OFF: Color  = Color { r: 50,  g: 50,  b: 75,  a: 255 };
 const C_OVERLAY: Color  = Color { r: 0,   g: 0,   b: 0,   a: 150 };
 const C_TIP_BG: Color   = Color { r: 8,   g: 8,   b: 18,  a: 220 };
+const C_TEXT_BG: Color  = Color { r: 80,   g: 80,   b: 80,   a: 255 };
 
 // ── Input bitmask ─────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ const TOGGLE_DEFS: [(&str, u8); 8] = [
     ("Z",     1 << 4),
     ("X",     1 << 5),
     ("C",     1 << 6),
-    ("ESC",   1 << 7),
+    ("SPACE",   1 << 7),
 ];
 
 // Toggle button geometry (relative to registers panel origin)
@@ -69,6 +70,7 @@ pub struct Debugger {
     rom_scroll: usize,
     pub input_toggles: u8,
     hovered_byte: Option<usize>,
+    addr_input: String,
 }
 
 impl Debugger {
@@ -80,13 +82,14 @@ impl Debugger {
             rom_scroll: 0,
             input_toggles: 0,
             hovered_byte: None,
+            addr_input: String::new(),
         }
     }
 
     // ── Called each frame before drawing ─────────────────────────────────────
 
     /// Returns true if the emulator should execute one step this frame.
-    pub fn update(&mut self, rl: &RaylibHandle) -> bool {
+    pub fn update(&mut self, rl: &mut RaylibHandle) -> bool {
         let mouse = rl.get_mouse_position();
         let wheel = rl.get_mouse_wheel_move();
 
@@ -116,7 +119,47 @@ impl Debugger {
         self.hovered_byte = self.resolve_hover(mouse);
 
         // Step on SPACE (only when paused)
-        self.paused && rl.is_key_pressed(KeyboardKey::KEY_SPACE)
+        let is_step = self.paused && rl.is_key_pressed(KeyboardKey::KEY_SPACE);
+
+        self._handle_keyboard(rl);
+
+        is_step
+    }
+
+    fn _handle_keyboard(&mut self, rl: &mut RaylibHandle) {
+        while let Some (key) = rl.get_key_pressed() {
+            match key {
+                KeyboardKey::KEY_ZERO => self.addr_input.push('0'),
+                KeyboardKey::KEY_ONE => self.addr_input.push('1'),
+                KeyboardKey::KEY_TWO => self.addr_input.push('2'),
+                KeyboardKey::KEY_THREE => self.addr_input.push('3'),
+                KeyboardKey::KEY_FOUR => self.addr_input.push('4'),
+                KeyboardKey::KEY_FIVE => self.addr_input.push('5'),
+                KeyboardKey::KEY_SIX => self.addr_input.push('6'),
+                KeyboardKey::KEY_SEVEN => self.addr_input.push('7'),
+                KeyboardKey::KEY_EIGHT => self.addr_input.push('8'),
+                KeyboardKey::KEY_NINE => self.addr_input.push('9'),
+                KeyboardKey::KEY_A => self.addr_input.push('A'),
+                KeyboardKey::KEY_B => self.addr_input.push('B'),
+                KeyboardKey::KEY_C => self.addr_input.push('C'),
+                KeyboardKey::KEY_D => self.addr_input.push('D'),
+                KeyboardKey::KEY_E => self.addr_input.push('E'),
+                KeyboardKey::KEY_F => self.addr_input.push('F'),
+                KeyboardKey::KEY_BACKSPACE => {
+                    self.addr_input.pop();
+                },
+                KeyboardKey::KEY_DELETE => self.addr_input.clear(),
+                KeyboardKey::KEY_ENTER => {
+                    self.scroll_to(usize::from_str_radix(&*self.addr_input, 16).unwrap());
+                    self.addr_input.clear();
+                },
+                KeyboardKey::KEY_R => {
+                    self.ram_scroll = 0;
+                    self.rom_scroll = 0;
+                }
+                _ => {}
+            };
+        }
     }
 
     /// Called by the emulator when it executes a Vsync opcode.
@@ -247,6 +290,18 @@ impl Debugger {
                 Color::WHITE,
             );
         }
+
+        let (gcx, gcy) = (px + 8, ty + TOG_H + 20);
+        let gcyt = ty + TOG_H + 5;
+        d.draw_text(
+            "ADDRESS INPUT",
+            gcx, gcyt,
+            FONT_SZ - 2,
+            C_DIM,
+        );
+        d.draw_rectangle(gcx + 33, gcy, 150, FONT_SZ * 2 + 2, C_TEXT_BG);
+        d.draw_text("0x", gcx, gcy + 4, FONT_SZ * 2 - 2, C_TEXT);
+        d.draw_text(self.addr_input.as_str(), gcx + 38, gcy + 3, FONT_SZ * 2, C_TEXT);
     }
 
     // ── Generic hex-editor panel ──────────────────────────────────────────────
@@ -391,6 +446,20 @@ impl Debugger {
         let addr = region_start + row as usize * BYTES_ROW + col as usize;
         if addr < region_start + region_size { Some(addr) } else { None }
     }
+
+    pub fn scroll_to(&mut self, addr: usize) {
+        let ram_start = Memory::vram_size();
+        let ram_end = Memory::rom_start();
+        let rom_start = Memory::rom_start();
+        let rom_end = self.emulator.memory.total_size();
+
+        if addr >= ram_start && addr < ram_end {
+            self.ram_scroll = (addr - ram_start) / BYTES_ROW;
+        } else if addr >= rom_start && addr < rom_end {
+            self.rom_scroll = (addr - rom_start) / BYTES_ROW;
+        }
+        // silently ignore if addr is in VRAM or out of bounds
+    }
 }
 
 // ── Register name helpers ─────────────────────────────────────────────────────
@@ -433,15 +502,14 @@ pub fn entry_debugger(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
     while !rl.window_should_close() {
         let mouse = rl.get_mouse_position();
 
-        if debugger.update(&rl) {
+        if debugger.update(&mut rl) {
             debugger.emulator.step()
         }
 
-        if debugger.emulator.update_texture {
+        if debugger.emulator.new_frame(&mut texture, &rl) {
             debugger.on_vsync()
         }
 
-        debugger.emulator.new_frame(&mut texture, &rl);
         let mut d = rl.begin_drawing(&thread);
 
         debugger.draw(&mut d, &mut texture, mouse);
