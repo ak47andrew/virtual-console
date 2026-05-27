@@ -15,6 +15,7 @@ pub enum OperandKind {
     IndirectAddress // Address taken from LongRegister
 }
 
+#[derive(Debug)]
 pub enum Operand {
     Address(u64),
     Immediate(u8),

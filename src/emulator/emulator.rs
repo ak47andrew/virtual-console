@@ -1,9 +1,9 @@
 use std::io::Error;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
-use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
+use raylib::prelude::{Color, Font, RaylibTexture2D, Texture2D};
 use raylib::prelude::KeyboardKey::{KEY_C, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_X, KEY_Z};
-use raylib::RaylibHandle;
+use raylib::{RaylibHandle, RaylibThread};
 use crate::consts::TARGET_RESOLUTION;
 use crate::emulator::memory::Memory;
 use crate::shared::opcodes::Opcode;
@@ -78,7 +78,9 @@ impl Emulator {
     }
 
     pub fn step(&mut self) {
-        match Opcode::from_bytecode(self.memory.read_u8()).unwrap() {
+        let opcode = Opcode::from_bytecode(self.memory.read_u8()).unwrap();
+        println!("{:?}", opcode);
+        match opcode {
             Opcode::Noop => {} // Noop
             Opcode::Hlt => {
                 self.memory.move_pc(-1);  // read_u8 moves to forward, we bring it back to hlt
@@ -89,6 +91,7 @@ impl Emulator {
             Opcode::Mov => {
                 let src = Operand::from_bytes(&mut self.memory);
                 let dest = Operand::from_bytes(&mut self.memory);
+                println!("{:?}\n{:?}", src, dest);
 
                 match (src, dest) {
                     (Operand::Immediate(v), Operand::Address(addr)) => {
@@ -128,7 +131,7 @@ impl Emulator {
                         self.memory.write_reg_long(reg, u64::from_be_bytes((&self.memory.peek(addr as usize, 8)[..8]).try_into().unwrap()));
                     }
                     (Operand::Register(reg1), Operand::Register(reg2)) => {
-                        self.memory.write_reg(reg1, self.memory.read_reg(reg2))
+                        self.memory.write_reg(reg2, self.memory.read_reg(reg1))
                     }
                     (Operand::LongImmediate(v), Operand::LongRegister(reg)) => {
                         self.memory.write_reg_long(reg, v);
@@ -603,7 +606,7 @@ impl Emulator {
                     Operand::LongRegister(reg) => {self.memory.read_reg_long(reg) != 0}
                     _ => panic!()
                 } {
-                    match Operand::from_bytes(&mut self.memory) {  // And yes, I'm gonna keep this repition here so it looks more cursed :P
+                    match Operand::from_bytes(&mut self.memory) {  // And yes, I'm gonna keep this repetition here so it looks more cursed :P
                         Operand::Address(addr) => {self.memory.set_pc(addr as usize)},
                         Operand::IndirectAddress(reg) => {self.memory.set_pc(self.memory.read_reg_long(reg) as usize)},
                         _ => panic!()

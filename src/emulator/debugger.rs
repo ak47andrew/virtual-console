@@ -37,7 +37,6 @@ const C_PC_BG: Color    = Color { r: 55,  g: 45,  b: 0,   a: 255 };
 const C_HOVER_BG: Color = Color { r: 55,  g: 55,  b: 90,  a: 255 };
 const C_TOG_ON: Color   = Color { r: 50,  g: 170, b: 70,  a: 255 };
 const C_TOG_OFF: Color  = Color { r: 50,  g: 50,  b: 75,  a: 255 };
-const C_OVERLAY: Color  = Color { r: 0,   g: 0,   b: 0,   a: 150 };
 const C_TIP_BG: Color   = Color { r: 8,   g: 8,   b: 18,  a: 220 };
 const C_TEXT_BG: Color  = Color { r: 80,   g: 80,   b: 80,   a: 255 };
 
@@ -71,10 +70,11 @@ pub struct Debugger {
     pub input_toggles: u8,
     hovered_byte: Option<usize>,
     addr_input: String,
+    font: Font
 }
 
 impl Debugger {
-    pub fn new(emulator: Emulator) -> Self {
+    pub fn new(emulator: Emulator, rl: &mut RaylibHandle, thread: &RaylibThread) -> Self {
         Self {
             emulator,
             paused: true,
@@ -83,6 +83,7 @@ impl Debugger {
             input_toggles: 0,
             hovered_byte: None,
             addr_input: String::new(),
+            font: rl.load_font(&thread, "font.ttf").unwrap()
         }
     }
 
@@ -227,21 +228,30 @@ impl Debugger {
 
         d.draw_rectangle(px, py, SCREEN_W, REG_H, C_PANEL);
         d.draw_rectangle(px, py, SCREEN_W, ROW_H, C_HEADER);
-        d.draw_text("REGISTERS", px + 4, py + 2, FONT_SZ, C_TEXT);
+        d.draw_text_ex(
+            &self.font,  "REGISTERS",
+            Vector2::new(px as f32 + 4.0, py as f32 + 2.0),
+            FONT_SZ as f32, 0.0, C_TEXT);
         d.draw_rectangle_lines(px, py, SCREEN_W, REG_H, C_BORDER);
 
         let mut x = px + 8;
         let mut y = py + ROW_H + 4;
 
         // ── 8-bit registers ──
-        d.draw_text("8-bit:", x, y, FONT_SZ - 2, C_DIM);
+        d.draw_text_ex(
+            &self.font,  "8-bit:",
+            Vector2::new(x as f32, y as f32),
+            FONT_SZ as f32 - 2.0, 0.0, C_DIM);
         y += ROW_H;
 
         let col_w = CHAR_W * 18; // "G1: FFh  255 " ≈ 18 chars
         for reg in Registers::all() {
             let val = self.emulator.memory.read_reg(reg);
             let label = format!("{:>2}: {:02X}h {:3}", reg_name_8(&reg), val, val);
-            d.draw_text(&label, x, y, FONT_SZ, C_TEXT);
+            d.draw_text_ex(
+                &self.font,  &label,
+                Vector2::new(x as f32, y as f32),
+                FONT_SZ as f32, 0.0, C_TEXT);
             x += col_w;
             if x + col_w > px + SCREEN_W {
                 x = px + 8;
@@ -253,14 +263,20 @@ impl Debugger {
         y += ROW_H + 4;
 
         // ── 64-bit registers ──
-        d.draw_text("64-bit:", x, y, FONT_SZ - 2, C_DIM);
+        d.draw_text_ex(
+            &self.font,  &"64-bit:",
+            Vector2::new(x as f32, y as f32),
+            FONT_SZ as f32 - 2.0, 0.0, C_DIM);
         y += ROW_H;
 
         let col64_w = CHAR_W * 28; // "PC : 0000000000000000h " ≈ 28 chars
         for reg in LongRegisters::all() {
             let val = self.emulator.memory.read_reg_long(reg);
             let label = format!("{}: {:016X}h", reg_name_64(&reg), val);
-            d.draw_text(&label, x, y, FONT_SZ, C_TEXT);
+            d.draw_text_ex(
+                &self.font,  &label,
+                Vector2::new(x as f32, y as f32),
+                FONT_SZ as f32, 0.0, C_TEXT);
             x += col64_w;
             if x + col64_w > px + SCREEN_W {
                 x = px + 8;
@@ -270,10 +286,10 @@ impl Debugger {
 
         // ── Input toggles ──
         let ty = py + TOG_Y_OFFSET;
-        d.draw_text(
-            "INPUT TOGGLES  (click to arm, applied + cleared on vsync):",
-            px + 8, ty - ROW_H, FONT_SZ - 2, C_DIM,
-        );
+        d.draw_text_ex(
+            &self.font,  &"INPUT TOGGLES  (click to arm, applied + cleared on vsync):",
+            Vector2::new(px as f32 + 8.0, ty as f32 - ROW_H as f32),
+            FONT_SZ as f32 - 2.0, 0.0, C_DIM);
 
         for (i, (label, bit)) in TOGGLE_DEFS.iter().enumerate() {
             let tx = px + TOG_X0 + i as i32 * (TOG_W + TOG_GAP);
@@ -282,26 +298,27 @@ impl Debugger {
             d.draw_rectangle(tx, ty, TOG_W, TOG_H, bg);
             d.draw_rectangle_lines(tx, ty, TOG_W, TOG_H, C_BORDER);
             let lw = measure_text(label, FONT_SZ - 2);
-            d.draw_text(
-                label,
-                tx + (TOG_W - lw) / 2,
-                ty + (TOG_H - (FONT_SZ - 2)) / 2,
-                FONT_SZ - 2,
-                Color::WHITE,
-            );
+            d.draw_text_ex(
+                &self.font,  &label,
+                Vector2::new((tx + (TOG_W - lw) / 2) as f32, (ty + (TOG_H - (FONT_SZ - 2)) / 2) as f32),
+                FONT_SZ as f32 - 2.0, 0.0, Color::WHITE);
         }
 
         let (gcx, gcy) = (px + 8, ty + TOG_H + 20);
         let gcyt = ty + TOG_H + 5;
-        d.draw_text(
-            "ADDRESS INPUT",
-            gcx, gcyt,
-            FONT_SZ - 2,
-            C_DIM,
-        );
+        d.draw_text_ex(
+            &self.font,  &"ADDRESS INPUT",
+            Vector2::new(gcx as f32, gcyt as f32),
+            FONT_SZ as f32 - 2.0, 0.0, C_DIM);
         d.draw_rectangle(gcx + 33, gcy, 150, FONT_SZ * 2 + 2, C_TEXT_BG);
-        d.draw_text("0x", gcx, gcy + 4, FONT_SZ * 2 - 2, C_TEXT);
-        d.draw_text(self.addr_input.as_str(), gcx + 38, gcy + 3, FONT_SZ * 2, C_TEXT);
+        d.draw_text_ex(
+            &self.font,  &"0x",
+            Vector2::new(gcx as f32, gcy as f32 + 4.0),
+            FONT_SZ as f32 * 2.0 - 2.0, 0.0, C_TEXT);
+        d.draw_text_ex(
+            &self.font,  self.addr_input.as_str(),
+            Vector2::new(gcx as f32 + 38.0, gcy as f32 + 3.0),
+            FONT_SZ as f32 * 2.0, 0.0, C_TEXT);
     }
 
     // ── Generic hex-editor panel ──────────────────────────────────────────────
@@ -320,10 +337,10 @@ impl Debugger {
     ) {
         d.draw_rectangle(px, py, pw, ph, C_PANEL);
         d.draw_rectangle(px, py, pw, ROW_H, C_HEADER);
-        d.draw_text(
-            &format!("{title}  ({region_size} bytes, scroll: {scroll})"),
-            px + 4, py + 2, FONT_SZ, C_TEXT,
-        );
+        d.draw_text_ex(
+            &self.font,  &format!("{title}  ({region_size} bytes, scroll: {scroll})"),
+            Vector2::new(px as f32 + 4.0, py as f32 + 2.0),
+            FONT_SZ as f32, 0.0, C_TEXT);
         d.draw_rectangle_lines(px, py, pw, ph, C_BORDER);
 
         let visible = ((ph - ROW_H) / ROW_H) as usize;
@@ -335,10 +352,10 @@ impl Debugger {
             let ry = py + ROW_H + (row - scroll) as i32 * ROW_H;
 
             // Address
-            d.draw_text(
-                &format!("{:06X}: ", row_base),
-                px + 2, ry + 1, FONT_SZ, C_DIM,
-            );
+            d.draw_text_ex(
+                &self.font,  &format!("{:06X}: ", row_base),
+                Vector2::new(px as f32 + 2.0, ry as f32 + 1.0),
+                FONT_SZ as f32, 0.0, C_DIM);
 
             for col in 0..BYTES_ROW {
                 let addr = row_base + col;
@@ -359,7 +376,10 @@ impl Debugger {
                 }
 
                 let color = if is_pc { C_PC } else if byte == 0 { C_DIM } else { C_TEXT };
-                d.draw_text(&format!("{:02X}", byte), bx, ry + 1, FONT_SZ, color);
+                d.draw_text_ex(
+                    &self.font,  &format!("{:02X}", byte),
+                    Vector2::new(bx as f32, ry as f32 + 1.0),
+                    FONT_SZ as f32, 0.0, color);
             }
         }
 
@@ -377,7 +397,10 @@ impl Debugger {
                     let ty = (my - ROW_H - 2).max(py + ROW_H);
                     d.draw_rectangle(tx - 2, ty - 2, tip_w + 4, ROW_H + 2, C_TIP_BG);
                     d.draw_rectangle_lines(tx - 2, ty - 2, tip_w + 4, ROW_H + 2, C_BORDER);
-                    d.draw_text(&tip, tx, ty, FONT_SZ - 1, C_TEXT);
+                    d.draw_text_ex(
+                        &self.font,  &tip,
+                        Vector2::new(tx as f32, ty as f32),
+                        FONT_SZ as f32 - 1.0, 0.0, C_TEXT);
                 }
             }
         }
@@ -494,7 +517,7 @@ fn measure_text(string: &str, fontsize: i32) -> i32 {
 }
 
 pub fn entry_debugger(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulator: Emulator) {
-    let mut debugger = Debugger::new(emulator);
+    let mut debugger = Debugger::new(emulator, &mut rl, &mut thread);
     let mut texture = rl.load_texture_from_image(&thread,
                                                  &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);

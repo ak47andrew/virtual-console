@@ -1,6 +1,6 @@
 use crate::compiler::ParseError;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum Opcode {
     Noop, Hlt, Vsync,
     Mov, Trunc, Ext, Copy,
