@@ -1,9 +1,9 @@
 use std::io::Error;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
-use raylib::prelude::{Color, Font, RaylibTexture2D, Texture2D};
+use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
 use raylib::prelude::KeyboardKey::{KEY_C, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_X, KEY_Z};
-use raylib::{RaylibHandle, RaylibThread};
+use raylib::RaylibHandle;
 use crate::consts::TARGET_RESOLUTION;
 use crate::emulator::memory::Memory;
 use crate::shared::opcodes::Opcode;

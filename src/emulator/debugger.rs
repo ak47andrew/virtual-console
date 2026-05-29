@@ -120,7 +120,7 @@ impl Debugger {
         self.hovered_byte = self.resolve_hover(mouse);
 
         // Step on SPACE (only when paused)
-        let is_step = self.paused && rl.is_key_pressed(KeyboardKey::KEY_SPACE);
+        let is_step = (self.paused && rl.is_key_pressed(KeyboardKey::KEY_SPACE)) || !self.paused;
 
         self._handle_keyboard(rl);
 
@@ -142,7 +142,11 @@ impl Debugger {
                 KeyboardKey::KEY_NINE => self.addr_input.push('9'),
                 KeyboardKey::KEY_A => self.addr_input.push('A'),
                 KeyboardKey::KEY_B => self.addr_input.push('B'),
-                KeyboardKey::KEY_C => self.addr_input.push('C'),
+                KeyboardKey::KEY_C => {
+                    if self.paused {
+                        self.addr_input.push('C')
+                    }
+                },
                 KeyboardKey::KEY_D => self.addr_input.push('D'),
                 KeyboardKey::KEY_E => self.addr_input.push('E'),
                 KeyboardKey::KEY_F => self.addr_input.push('F'),
@@ -157,6 +161,9 @@ impl Debugger {
                 KeyboardKey::KEY_R => {
                     self.ram_scroll = 0;
                     self.rom_scroll = 0;
+                }
+                KeyboardKey::KEY_T => {
+                    self.paused = !self.paused;
                 }
                 _ => {}
             };
@@ -529,7 +536,7 @@ pub fn entry_debugger(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
             debugger.emulator.step()
         }
 
-        if debugger.emulator.new_frame(&mut texture, &rl) {
+        if debugger.emulator.new_frame(&mut texture, &rl) && debugger.paused {
             debugger.on_vsync()
         }
 
