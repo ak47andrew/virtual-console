@@ -1,50 +1,60 @@
 use std::borrow::Cow;
 use num_bigint::BigUint;
-use crate::consts::{RAM_SIZE, TARGET_RESOLUTION};
+use crate::consts::{RAM_SIZE, STACK_SIZE, TARGET_RESOLUTION};
 use crate::shared::registers::{LongRegisters, Registers};
 use unsigned_varint::decode as varint;
 
-/// Memory layout looks like this (everything is given in bytes):
-/// - 0-245760: VRAM (245760 = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 (Channels: RGBA (bc Raylib, A always 255)))
-/// - 245761-501759: RAM (RAM_SIZE)
-/// - 501760: INPUT_HELD
-/// - 501761: INPUT_PRESSED
-/// - 501762+: ROM (everything else, aka rom_size)
 pub struct Memory {
     memory: Vec<u8>,
+    rom_size: usize,
     registers: RegisterMemory
 }
 
 impl Memory {
     pub fn new(rom_size: usize) -> Self {
         let mut obj = Self {
-            memory: vec![0; Memory::vram_size() + RAM_SIZE + rom_size],
-            registers: RegisterMemory::new()
+            memory: vec![0; Memory::vram_size() + Memory::ram_size() + Memory::stack_size() + rom_size],
+            rom_size,
+            registers: RegisterMemory::new(),
         };
         obj.set_pc(Memory::rom_start());
         obj
     }
 
     pub fn vram(&self) -> &[u8] {
-        &self.memory[..Memory::vram_size()]
+        &self.memory[Memory::vram_start()..Memory::vram_start() + Memory::vram_size()]
     }
 
     pub fn vram_size() -> usize {
         (TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4) as usize
     }
-
-    pub fn rom_start() -> usize {
-        Memory::vram_size() + RAM_SIZE
+    pub fn ram_size() -> usize {
+        RAM_SIZE
     }
-
-    pub fn input_pressed() -> usize {
-        Memory::rom_start() - 1
+    pub fn stack_size() -> usize {
+        STACK_SIZE
     }
-
+    pub fn rom_size(&self) -> usize {
+        self.rom_size
+    }
+    pub fn vram_start() -> usize {
+        0
+    }
+    pub fn ram_start() -> usize {
+        Memory::vram_size()
+    }
+    pub fn stack_start() -> usize {
+        Memory::ram_start() + Memory::ram_size()
+    }
     pub fn input_held() -> usize {
-        Memory::rom_start() - 2
+        Memory::ram_start() + Memory::ram_size() - 2
     }
-
+    pub fn input_pressed() -> usize {
+        Memory::ram_start() + Memory::ram_size() - 1
+    }
+    pub fn rom_start() -> usize {
+        Memory::stack_start() + Memory::stack_size()
+    }
     pub fn total_size(&self) -> usize {
         self.memory.len()
     }
@@ -121,6 +131,25 @@ impl Memory {
         self.set_pc((self.read_pc() as i32 + offset) as usize);
     }
 
+    pub fn push_stack(&mut self, value: u8) {
+        let sp = self.read_reg_long(LongRegisters::SP) as usize;
+        if sp + 1 > Memory::stack_size() {
+            panic!("Stack overflow");
+        }
+        self.memory[sp] = value;
+        self.write_reg_long(LongRegisters::SP, sp as u64 + 1);
+    }
+
+    pub fn pop_stack(&mut self) -> u8 {
+        let sp = self.read_reg_long(LongRegisters::SP) as usize;
+        if sp == 0 {
+            panic!("Stack underflow");
+        }
+        let data = self.memory[sp - 1];
+        self.write_reg_long(LongRegisters::SP, sp as u64 - 1);
+        data
+    }
+
     pub fn write_reg(&mut self, reg: Registers, value: u8) {
         self.registers.registers[reg.to_bytecode() as usize] = value;
     }
@@ -140,14 +169,14 @@ impl Memory {
 
 pub struct RegisterMemory {
     pub registers: [u8; 0x8 + 1],
-    pub long_registers: [u64; 0x5 + 1],
+    pub long_registers: [u64; 0x6 + 1],
 }
 
 impl RegisterMemory {
     pub fn new() -> RegisterMemory {
         RegisterMemory {
             registers: [0; 0x8 + 1],
-            long_registers: [0; 0x5 + 1],
+            long_registers: [0; 0x6 + 1],
         }
     }
 }

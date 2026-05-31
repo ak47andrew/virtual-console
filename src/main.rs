@@ -5,6 +5,7 @@ use crate::compiler::entry::entry_compiler;
 use crate::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::debugger::entry_debugger;
 use crate::emulator::emulator::Emulator;
+use crate::emulator::memory::Memory;
 
 pub mod consts;
 pub mod emulator;
@@ -12,6 +13,9 @@ pub mod helper;
 pub mod compiler;
 pub mod shared;
 
+// println!("{}", Memory::input_held());  // 495758
+// println!("{}", Memory::input_pressed());  // 495759
+// return;
 fn main() {
     let mut args = env::args().collect::<Vec<String>>();
     args.remove(0);

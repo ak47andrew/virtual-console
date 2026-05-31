@@ -511,6 +511,7 @@ fn reg_name_8(reg: &Registers) -> &'static str {
 fn reg_name_64(reg: &LongRegisters) -> &'static str {
     match reg {
         LongRegisters::PC  => "PC ",
+        LongRegisters::SP => "SP ",
         LongRegisters::LL1 => "LL1",
         LongRegisters::LL2 => "LL2",
         LongRegisters::GP1 => "GP1",
