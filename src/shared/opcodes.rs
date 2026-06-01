@@ -6,7 +6,8 @@ pub enum Opcode {
     Mov, Trunc, Ext, Copy,
     Add, Sub, Mul, Div,
     And, Or, Xor, Not, Shr, Shl,
-    Jmp, Je, Jne
+    Jmp, Je, Jne,
+    PUSH, POP, RET, CALL
 }
 
 impl Opcode {
@@ -36,6 +37,11 @@ impl Opcode {
             Opcode::Jmp => 0x40,
             Opcode::Je => 0x41,
             Opcode::Jne => 0x42,
+
+            Opcode::PUSH => 0x50,
+            Opcode::POP => 0x51,
+            Opcode::RET => 0x60,
+            Opcode::CALL => 0x70,
         }
     }
     
@@ -61,6 +67,10 @@ impl Opcode {
             0x40 => Ok(Opcode::Jmp),
             0x41 => Ok(Opcode::Je),
             0x42 => Ok(Opcode::Jne),
+            0x50 => Ok(Opcode::PUSH),
+            0x51 => Ok(Opcode::POP),
+            0x52 => Ok(Opcode::RET),
+            0x53 => Ok(Opcode::CALL),
             _ => Err(ParseError::UnknownOpcode(code.to_string()))
         }
     }

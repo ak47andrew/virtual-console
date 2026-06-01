@@ -79,7 +79,7 @@ impl Emulator {
 
     pub fn step(&mut self) {
         let opcode = Opcode::from_bytecode(self.memory.read_u8()).unwrap();
-        println!("{:?}", opcode);
+        // println!("{:?}", opcode);
         match opcode {
             Opcode::Noop => {} // Noop
             Opcode::Hlt => {
@@ -91,7 +91,6 @@ impl Emulator {
             Opcode::Mov => {
                 let src = Operand::from_bytes(&mut self.memory);
                 let dest = Operand::from_bytes(&mut self.memory);
-                println!("{:?}\n{:?}", src, dest);
 
                 match (src, dest) {
                     (Operand::Immediate(v), Operand::Address(addr)) => {
@@ -629,6 +628,28 @@ impl Emulator {
                 } else {
                     let _ = Operand::from_bytes(&mut self.memory);
                 }
+            }
+            Opcode::PUSH => {
+                let value = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(val) => val,
+                    Operand::Register(reg) => {self.memory.read_reg(reg)}
+                    _ => panic!()
+                };
+
+                println!("Pushed value {}", value);
+
+                self.memory.push_stack(value);
+            }
+            Opcode::POP => {
+                let value = self.memory.pop_stack();
+                println!("Popped value {}", value);
+                self.memory.write_reg(Registers::A, value);
+            }
+            Opcode::CALL => {
+                todo!()
+            }
+            Opcode::RET => {
+                todo!()
             }
         }
     }

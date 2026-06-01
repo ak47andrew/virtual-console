@@ -100,6 +100,11 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
         "je" => Ok(Opcode::Je),
         "jne" => Ok(Opcode::Jne),
 
+        "push" => Ok(Opcode::PUSH),
+        "pop" => Ok(Opcode::POP),
+        "ret" => Ok(Opcode::RET),
+        "call" => Ok(Opcode::CALL),
+
         _ => Err(ParseError::UnknownOpcode(token.to_string()))
     }
 }

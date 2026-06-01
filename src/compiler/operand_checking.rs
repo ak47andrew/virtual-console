@@ -164,6 +164,15 @@ pub const EMPTY_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     }
 });
 
+pub const PUSH_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate],
+            vec![Register],
+        ]
+    }
+});
+
 pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
     match opcode {
         Opcode::Noop => EMPTY_SIGNATURE,
@@ -186,5 +195,9 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::Jmp => JMP_SIGNATURE,
         Opcode::Je => CONDITIONAL_JUMP_SIGNATURE,
         Opcode::Jne => CONDITIONAL_JUMP_SIGNATURE,
+        Opcode::PUSH => PUSH_SIGNATURE,
+        Opcode::POP => EMPTY_SIGNATURE,
+        Opcode::RET => EMPTY_SIGNATURE,
+        Opcode::CALL => JMP_SIGNATURE,
     }
 }
