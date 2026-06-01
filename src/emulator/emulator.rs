@@ -636,17 +636,21 @@ impl Emulator {
                     _ => panic!()
                 };
 
-                self.memory.push_stack(value);
+                self.memory.push8(value);
             }
             Opcode::POP => {
-                let value = self.memory.pop_stack();
+                let value = self.memory.pop8();
                 self.memory.write_reg(Registers::A, value);
             }
             Opcode::CALL => {
-                todo!()
+                let target = Operand::from_bytes(&mut self.memory).unwrap_address(&self.memory);
+                let pc = self.memory.read_pc();
+                self.memory.push64(pc as u64);
+                self.memory.set_pc(target as usize);
             }
             Opcode::RET => {
-                todo!()
+                let addr = self.memory.pop64();
+                self.memory.set_pc(addr as usize);
             }
         }
     }

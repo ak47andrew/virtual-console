@@ -40,8 +40,8 @@ impl Opcode {
 
             Opcode::PUSH => 0x50,
             Opcode::POP => 0x51,
-            Opcode::RET => 0x60,
-            Opcode::CALL => 0x70,
+            Opcode::RET => 0x52,
+            Opcode::CALL => 0x53,
         }
     }
     

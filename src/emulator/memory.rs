@@ -18,6 +18,7 @@ impl Memory {
             registers: RegisterMemory::new(),
         };
         obj.set_pc(Memory::rom_start());
+        obj.write_reg_long(LongRegisters::SP, Memory::stack_start() as u64);
         obj
     }
 
@@ -131,7 +132,7 @@ impl Memory {
         self.set_pc((self.read_pc() as i32 + offset) as usize);
     }
 
-    pub fn push_stack(&mut self, value: u8) {
+    pub fn push8(&mut self, value: u8) {
         let sp = self.read_reg_long(LongRegisters::SP) as usize;
         if sp + 1 > Memory::stack_size() {
             panic!("Stack overflow");
@@ -140,7 +141,7 @@ impl Memory {
         self.write_reg_long(LongRegisters::SP, sp as u64 + 1);
     }
 
-    pub fn pop_stack(&mut self) -> u8 {
+    pub fn pop8(&mut self) -> u8 {
         let sp = self.read_reg_long(LongRegisters::SP) as usize;
         if sp == 0 {
             panic!("Stack underflow");
@@ -148,6 +149,18 @@ impl Memory {
         let data = self.memory[sp - 1];
         self.write_reg_long(LongRegisters::SP, sp as u64 - 1);
         data
+    }
+
+    pub fn push64(&mut self, value: u64) {
+        let sp = self.read_reg_long(LongRegisters::SP);
+        self.put(sp as usize, &value.to_be_bytes());
+        self.write_reg_long(LongRegisters::SP, sp + 8);
+    }
+
+    pub fn pop64(&mut self) -> u64 {
+        let sp = self.read_reg_long(LongRegisters::SP) - 8;
+        self.write_reg_long(LongRegisters::SP, sp);
+        u64::from_be_bytes((&*self.peek(sp as usize, 8)).try_into().unwrap())
     }
 
     pub fn write_reg(&mut self, reg: Registers, value: u8) {
