@@ -6,14 +6,19 @@ use crate::compiler::parsing::{encode_opcode, parse_opcode};
 pub fn entry_compiler(file: &str) {
     // file ends in .vea (virtual emulator assembly)
     let file_content = std::fs::read_to_string(file).unwrap();
-    let lines = file_content.lines().collect::<Vec<&str>>();
+    let lines = file_content.lines().map(
+        |x| x.split(";").next().unwrap_or(x)
+    ).map(
+        |x| x.trim()
+    ).filter(
+        |x| !x.is_empty()
+    ).collect::<Vec<&str>>();
 
     // Pass 1
     let mut labels: HashMap<String, u64> = HashMap::new();
     let mut offset: u64 = 0;
     for line in &lines {
         let line = line.trim();
-        if line.starts_with(";") { continue; }
         if let Some(label) = line.strip_suffix(":") {
             labels.insert(label.to_string(), offset);
         } else {
@@ -24,7 +29,7 @@ pub fn entry_compiler(file: &str) {
     // Pass 2
     let mut output = vec![];
     for line in &lines {
-        if line.starts_with(";") || line.ends_with(":") {continue;}
+        if line.ends_with(":") {continue;}
         output.extend(compile(line, &labels, false));
     }
 

@@ -636,13 +636,10 @@ impl Emulator {
                     _ => panic!()
                 };
 
-                println!("Pushed value {}", value);
-
                 self.memory.push_stack(value);
             }
             Opcode::POP => {
                 let value = self.memory.pop_stack();
-                println!("Popped value {}", value);
                 self.memory.write_reg(Registers::A, value);
             }
             Opcode::CALL => {

@@ -1,0 +1,41 @@
+; G1 = x counter, G2 = y (fixed middle of screen)
+mov 0 !G1
+mov 120 !G2
+
+; Pass 1: march right, push each x onto stack
+push_loop:
+push !G1
+add !G1 1
+mov !A !G1
+; draw pixel going right
+ext !G1 ?LL1
+mul ?LL1 &4
+mov ?LL1 ?LL2
+ext !G2 ?LL1
+mul ?LL1 &1024
+add ?LL1 ?LL2
+mov 0xFF [?LL1]
+vsync
+add !G1 1
+mov !A !G1
+jne !G1 push_done
+jmp push_loop
+push_done:
+
+; Pass 2: pop x values back, draw return trip in different color
+pop_loop:
+pop             ; A = saved x
+mov !A !G1
+ext !G1 ?LL1
+mul ?LL1 &4
+mov ?LL1 ?LL2
+ext !G2 ?LL1
+mul ?LL1 &1024
+add ?LL1 ?LL2
+mov 0xAA [?LL1]
+vsync
+jne !A pop_done
+jmp pop_loop
+pop_done:
+
+hlt
