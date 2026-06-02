@@ -1,13 +1,34 @@
 use std::borrow::Cow;
 use num_bigint::BigUint;
-use crate::consts::{RAM_SIZE, STACK_SIZE, TARGET_RESOLUTION};
-use crate::shared::registers::{LongRegisters, Registers};
+use vea_shared::consts::{RAM_SIZE, STACK_SIZE, TARGET_RESOLUTION};
+use vea_shared::registers::{LongRegisters, Registers};
 use unsigned_varint::decode as varint;
+use vea_shared::bytereader::ByteReader;
 
 pub struct Memory {
     memory: Vec<u8>,
     rom_size: usize,
     registers: RegisterMemory
+}
+
+
+impl ByteReader for Memory {
+    fn read_u8(&mut self) -> u8 {
+        self.read(1)[0]
+    }
+    fn read_u64(&mut self) -> u64 {
+        u64::from_be_bytes((&*self.read(8)).try_into().unwrap())
+    }
+    fn read_biguint(&mut self) -> BigUint {
+        let len = self._read_varint_usize();
+        BigUint::from_bytes_be(&*self.read(len))
+    }
+    fn read_reg(&self, reg: Registers) -> u8 {
+        self.registers.registers[reg.to_bytecode() as usize]
+    }
+    fn read_reg_long(&self, reg: LongRegisters) -> u64 {
+        self.registers.long_registers[reg.to_bytecode() as usize]
+    }
 }
 
 impl Memory {
@@ -93,14 +114,6 @@ impl Memory {
         self.peek(addr, amount)
     }
 
-    pub fn read_u8(&mut self) -> u8 {
-        self.read(1)[0]
-    }
-
-    pub fn read_u64(&mut self) -> u64 {
-        u64::from_be_bytes((&*self.read(8)).try_into().unwrap())
-    }
-
     fn _read_varint_usize(&mut self) -> usize {
         let mut buf = [0u8; 10];
         let mut i = 0;
@@ -113,11 +126,6 @@ impl Memory {
         varint::usize(&buf)
             .map(|(val, _)| val)
             .unwrap()
-    }
-
-    pub fn read_biguint(&mut self) -> BigUint {
-        let len = self._read_varint_usize();
-        BigUint::from_bytes_be(&*self.read(len))
     }
 
     pub fn set_pc(&mut self, new_pc: usize) {
@@ -169,14 +177,6 @@ impl Memory {
 
     pub fn write_reg_long(&mut self, reg: LongRegisters, value: u64) {
         self.registers.long_registers[reg.to_bytecode() as usize] = value;
-    }
-
-    pub fn read_reg(&self, reg: Registers) -> u8 {
-        self.registers.registers[reg.to_bytecode() as usize]
-    }
-
-    pub fn read_reg_long(&self, reg: LongRegisters) -> u64 {
-        self.registers.long_registers[reg.to_bytecode() as usize]
     }
 }
 

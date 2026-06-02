@@ -1,7 +1,7 @@
-use crate::shared::operand_types::OperandKind;
-use crate::shared::operand_types::OperandKind::{Address, Immediate, IndirectAddress, LongImmediate, LongRegister, LongerImmediate, Register};
+use vea_shared::operand_types::OperandKind;
+use vea_shared::operand_types::OperandKind::{Address, Immediate, IndirectAddress, LongImmediate, LongRegister, LongerImmediate, Register};
 use once_cell::sync::Lazy;
-use crate::shared::opcodes::Opcode;
+use vea_shared::opcodes::Opcode;
 
 pub struct InstructionSignature {
     pub operands_variations: Vec<Vec<OperandKind>>,

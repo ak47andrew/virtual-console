@@ -1,11 +1,7 @@
-[package]
-name = "custom_nes"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-raylib = { version = "5.5.1", features = [] }
-num-traits = "0.2.19"
-num-bigint = "0.4"
-once_cell = "1.21.4"
-unsigned-varint = "0.8.0"
+[workspace]
+members = [
+    "src/shared",
+    "src/compiler",
+    "src/runtime"
+]
+resolver = "3"

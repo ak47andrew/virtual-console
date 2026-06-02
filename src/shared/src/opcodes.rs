@@ -1,4 +1,4 @@
-use crate::compiler::ParseError;
+use crate::ParseError;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Opcode {

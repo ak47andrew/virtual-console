@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::io::Write;
-use crate::compiler::ParseError;
-use crate::compiler::parsing::{encode_opcode, parse_opcode};
+use vea_shared::ParseError;
+use crate::parsing::{encode_opcode, parse_opcode};
 
 pub fn entry_compiler(file: &str) {
     // file ends in .vea (virtual emulator assembly)

@@ -1,6 +1,9 @@
-pub mod entry;
-pub mod parsing;
-pub mod operand_checking;
+pub mod registers;
+pub mod operand_types;
+pub mod opcodes;
+pub mod bytereader;
+pub mod helper;
+pub mod consts;
 
 #[derive(Debug)]
 pub enum ParseError {

@@ -1,8 +1,9 @@
 use raylib::prelude::*;
-use crate::consts::{RAM_SIZE, SCREEN_SIZE, TARGET_RESOLUTION};
-use crate::emulator::emulator::Emulator;
-use crate::emulator::memory::Memory;
-use crate::shared::registers::{LongRegisters, Registers};
+use vea_shared::bytereader::ByteReader;
+use vea_shared::consts::{RAM_SIZE, SCREEN_SIZE, TARGET_RESOLUTION};
+use crate::emulator::Emulator;
+use crate::memory::Memory;
+use vea_shared::registers::{LongRegisters, Registers};
 
 // ── Window & panel geometry ───────────────────────────────────────────────────
 

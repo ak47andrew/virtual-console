@@ -1,8 +1,8 @@
 use num_bigint::BigUint;
 use num_traits::ToBytes;
 use unsigned_varint::encode as varint;
-use crate::emulator::memory::Memory;
-use crate::shared::registers::{LongRegisters, Registers};
+use crate::bytereader::ByteReader;
+use crate::registers::{LongRegisters, Registers};
 
 #[derive(PartialEq)]
 pub enum OperandKind {
@@ -70,7 +70,7 @@ impl Operand {
         }
     }
 
-    pub fn from_bytes(memory: &mut Memory) -> Operand {
+    pub fn from_bytes(memory: &mut impl ByteReader) -> Operand {
         match memory.read_u8() {
             0x01 => Operand::Immediate(memory.read_u8()),
             0x02 => Operand::LongImmediate(memory.read_u64()),
@@ -80,14 +80,6 @@ impl Operand {
             0x11 => Operand::LongRegister(LongRegisters::from_bytecode(memory.read_u8())),
             0x12 => Operand::IndirectAddress(LongRegisters::from_bytecode(memory.read_u8())),
             _ => panic!("Uh... Corrupted program ig")
-        }
-    }
-
-    pub fn unwrap_address(self, memory: &Memory) -> u64 {
-        match self {
-            Operand::Address(addr) => addr,
-            Operand::IndirectAddress(reg) => memory.read_reg_long(reg),
-            _ => panic!()
         }
     }
 }

@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use num_bigint::BigUint;
 use num_traits::{Num, ToPrimitive};
-use crate::compiler::operand_checking::get_signature;
-use crate::compiler::ParseError;
-use crate::emulator::memory::Memory;
-use crate::shared::opcodes::Opcode;
-use crate::shared::operand_types::{Operand, OperandKind};
-use crate::shared::registers::{LongRegisters, Registers};
+use crate::operand_checking::get_signature;
+use vea_shared::ParseError;
+use vea_shared::opcodes::Opcode;
+use vea_shared::operand_types::{Operand, OperandKind};
+use vea_shared::registers::{LongRegisters, Registers};
 
 pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
     let mut kinds = Vec::new();
@@ -19,9 +18,13 @@ pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pas
     Ok((kinds, operands))
 }
 
+fn rom_start() -> u64 {  // TODO: change with actual calculations. Pulled from the last release
+    503952
+}
+
 fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<Operand, ParseError> {
     if labels.contains_key(*token) {
-        return Ok(Operand::Address(*labels.get(*token).unwrap() + Memory::rom_start() as u64))
+        return Ok(Operand::Address(*labels.get(*token).unwrap() + rom_start()))
     }
 
     if token.starts_with("$") {

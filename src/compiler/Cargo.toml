@@ -1,0 +1,10 @@
+[package]
+name = "vea_compiler"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+vea_shared = { path = "../shared" }
+once_cell = "1.21.4"
+num-traits = "0.2.19"
+num-bigint = "0.4"

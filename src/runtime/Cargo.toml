@@ -1,0 +1,11 @@
+[package]
+name = "vea_runtime"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+raylib = { version = "5.5.1", features = [] }
+vea_shared = { path = "../shared" }
+num-traits = "0.2.19"
+num-bigint = "0.4"
+unsigned-varint = "0.8.0"

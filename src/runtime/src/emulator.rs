@@ -4,11 +4,12 @@ use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
 use raylib::prelude::KeyboardKey::{KEY_C, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_X, KEY_Z};
 use raylib::RaylibHandle;
-use crate::consts::TARGET_RESOLUTION;
-use crate::emulator::memory::Memory;
-use crate::shared::opcodes::Opcode;
-use crate::shared::operand_types::Operand;
-use crate::shared::registers::{LongRegisters, Registers};
+use vea_shared::bytereader::ByteReader;
+use vea_shared::consts::TARGET_RESOLUTION;
+use crate::memory::Memory;
+use vea_shared::opcodes::Opcode;
+use vea_shared::operand_types::Operand;
+use vea_shared::registers::{LongRegisters, Registers};
 
 pub struct Emulator {
     pub memory: Memory,
@@ -192,8 +193,16 @@ impl Emulator {
                     Operand::LongRegister(reg) => {BigUint::from(self.memory.read_reg_long(reg))}
                     _ => {panic!()}
                 };
-                let addr1 = Operand::from_bytes(&mut self.memory).unwrap_address(&self.memory);
-                let addr2 = Operand::from_bytes(&mut self.memory).unwrap_address(&self.memory);
+                let addr1 = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Address(addr) => addr,
+                    Operand::IndirectAddress(reg) => self.memory.read_reg_long(reg),
+                    _ => panic!()
+                };
+                let addr2 = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Address(addr) => addr,
+                    Operand::IndirectAddress(reg) => self.memory.read_reg_long(reg),
+                    _ => panic!()
+                };
 
                 let mut offset = BigUint::ZERO;
                 let mut remaining = length.clone();
@@ -643,7 +652,11 @@ impl Emulator {
                 self.memory.write_reg(Registers::A, value);
             }
             Opcode::CALL => {
-                let target = Operand::from_bytes(&mut self.memory).unwrap_address(&self.memory);
+                let target = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Address(addr) => addr,
+                    Operand::IndirectAddress(reg) => self.memory.read_reg_long(reg),
+                    _ => panic!()
+                };
                 let pc = self.memory.read_pc();
                 self.memory.push64(pc as u64);
                 self.memory.set_pc(target as usize);
