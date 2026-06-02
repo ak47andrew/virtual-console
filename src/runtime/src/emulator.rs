@@ -1,11 +1,14 @@
 use std::io::Error;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
-use raylib::prelude::{Color, RaylibTexture2D, Texture2D};
+use raylib::prelude::{Color, Image, RaylibTexture2D, Texture2D};
 use raylib::prelude::KeyboardKey::{KEY_C, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_UP, KEY_X, KEY_Z};
-use raylib::RaylibHandle;
+use raylib::{RaylibHandle, RaylibThread};
+use raylib::consts::TextureFilter;
+use raylib::drawing::RaylibDraw;
+use raylib::math::{Rectangle, Vector2};
 use vea_shared::bytereader::ByteReader;
-use vea_shared::consts::TARGET_RESOLUTION;
+use vea_shared::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::memory::Memory;
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::Operand;
@@ -666,5 +669,31 @@ impl Emulator {
                 self.memory.set_pc(addr as usize);
             }
         }
+    }
+}
+
+#[allow(unused_mut)]
+pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulator: Emulator) {
+    let mut texture = rl.load_texture_from_image(&thread,
+                                                 &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
+    texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
+
+    while !rl.window_should_close() {
+        emulator.step();
+        emulator.new_frame(&mut texture, &mut rl);
+
+        let mut d = rl.begin_drawing(&thread);
+
+        d.draw_texture_pro(
+            &texture,
+            Rectangle::new(
+                0.0, 0.0,
+                texture.width() as f32, texture.height() as f32
+            ),
+            Rectangle::new(0.0, 0.0, SCREEN_SIZE.x as f32, SCREEN_SIZE.y as f32),
+            Vector2::new(0.0, 0.0),
+            0.0,
+            Color::WHITE
+        )
     }
 }
