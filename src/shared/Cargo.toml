@@ -7,3 +7,6 @@ edition = "2024"
 num-traits = "0.2.19"
 num-bigint = "0.4"
 unsigned-varint = "0.8.0"
+serde = { version = "1", features = ["derive"] }
+toml = "0.9"
+zip = "8.6.0"

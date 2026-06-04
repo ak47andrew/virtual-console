@@ -2,8 +2,10 @@
 .idea/
 *.vea
 *.veb
-!examples/*.vea
+!examples/**
 
 flamegraph.svg
 perf.data
 perf.data.old
+source/
+source.vec

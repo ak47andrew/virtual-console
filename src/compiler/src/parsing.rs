@@ -1,30 +1,32 @@
 use std::collections::HashMap;
 use num_bigint::BigUint;
 use num_traits::{Num, ToPrimitive};
+use vea_shared::consts::TARGET_RESOLUTION;
+use vea_shared::manifest::Manifest;
 use crate::operand_checking::get_signature;
 use vea_shared::ParseError;
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::{Operand, OperandKind};
 use vea_shared::registers::{LongRegisters, Registers};
 
-pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
+pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
     let mut kinds = Vec::new();
     let mut operands = Vec::new();
     for arg in args {
-        let operand = parse_operand(arg, labels, is_first_pass)?;
+        let operand = parse_operand(arg, labels, is_first_pass, manifest)?;
         kinds.push(operand.kind());
         operands.push(operand);
     }
     Ok((kinds, operands))
 }
 
-fn rom_start() -> u64 {  // TODO: change with actual calculations. Pulled from the last release
-    503952
+fn rom_start(manifest: &Manifest) -> u64 {
+    TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 + manifest.settings.ram_size + manifest.settings.stack_size
 }
 
-fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Result<Operand, ParseError> {
+fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Operand, ParseError> {
     if labels.contains_key(*token) {
-        return Ok(Operand::Address(*labels.get(*token).unwrap() + rom_start()))
+        return Ok(Operand::Address(*labels.get(*token).unwrap() + rom_start(manifest)))
     }
 
     if token.starts_with("$") {
@@ -58,7 +60,7 @@ fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: boo
     }
     if token.starts_with("[") && token.ends_with("]") {
         let reg_str = &token[1..token.len() - 1];
-        return match parse_operand(&reg_str, labels, is_first_pass)? {
+        return match parse_operand(&reg_str, labels, is_first_pass, manifest)? {
             Operand::LongRegister(reg) => Ok(Operand::IndirectAddress(reg)),
             _ => Err(ParseError::InvalidOperand(token.to_string())),
         };
@@ -174,8 +176,8 @@ pub fn parse_u64_num(input: String) -> Result<u64, ParseError> {
     }
 }
 
-pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool) -> Vec<u8> {
-    let result = parse_operands(args, labels, is_first_pass);
+pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Vec<u8> {
+    let result = parse_operands(args, labels, is_first_pass, manifest);
     let (kinds, operands) = match result {
         Ok((kinds, operands)) => {
             (kinds, operands)

@@ -1,0 +1,9 @@
+entry = "stack.vea"  # path (relative to the directory's root) of the source code. By convention this should be source.vea, but here I show that it's not always nessesary 
+
+[metadata]  # Basic metadata: name and version of the game. Emulator doesn't use this data, but this can be used by launchers in the future
+name = "Test Game"
+version = "v1.0"
+
+[settings]
+ram_size = 250000  # Number of bytes program uses for the RAM
+stack_size = 20000  # Number of bytes program uses for the stack

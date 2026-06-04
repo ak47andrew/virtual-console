@@ -1,13 +1,16 @@
 use std::borrow::Cow;
 use num_bigint::BigUint;
-use vea_shared::consts::{RAM_SIZE, STACK_SIZE, TARGET_RESOLUTION};
+use vea_shared::consts::TARGET_RESOLUTION;
 use vea_shared::registers::{LongRegisters, Registers};
 use unsigned_varint::decode as varint;
 use vea_shared::bytereader::ByteReader;
+use vea_shared::cartridge::Cartridge;
 
 pub struct Memory {
     memory: Vec<u8>,
-    rom_size: usize,
+    pub ram_size: usize,
+    pub stack_size: usize,
+    pub rom_size: usize,
     registers: RegisterMemory
 }
 
@@ -32,50 +35,48 @@ impl ByteReader for Memory {
 }
 
 impl Memory {
-    pub fn new(rom_size: usize) -> Self {
+    pub fn new(cartridge: &Cartridge) -> Self {
         let mut obj = Self {
-            memory: vec![0; Memory::vram_size() + Memory::ram_size() + Memory::stack_size() + rom_size],
-            rom_size,
+            ram_size: cartridge.manifest.settings.ram_size as usize,
+            stack_size: cartridge.manifest.settings.stack_size as usize,
             registers: RegisterMemory::new(),
+            rom_size: cartridge.entry_bytecode.len(),
+            memory: vec![0; Memory::vram_size() + cartridge.manifest.settings.ram_size as usize + cartridge.manifest.settings.stack_size as usize + cartridge.entry_bytecode.len()]
         };
-        obj.set_pc(Memory::rom_start());
-        obj.write_reg_long(LongRegisters::SP, Memory::stack_start() as u64);
+        obj.set_pc(obj.rom_start());
+        obj.write_reg_long(LongRegisters::SP, obj.stack_start() as u64);
+        obj.put(obj.rom_start(), cartridge.entry_bytecode.as_slice());
+
         obj
     }
 
     pub fn vram(&self) -> &[u8] {
-        &self.memory[Memory::vram_start()..Memory::vram_start() + Memory::vram_size()]
+        &self.memory[self.vram_start()..self.vram_start() + Memory::vram_size()]
     }
 
     pub fn vram_size() -> usize {
         (TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4) as usize
     }
-    pub fn ram_size() -> usize {
-        RAM_SIZE
-    }
-    pub fn stack_size() -> usize {
-        STACK_SIZE
-    }
     pub fn rom_size(&self) -> usize {
         self.rom_size
     }
-    pub fn vram_start() -> usize {
+    pub fn vram_start(&self) -> usize {
         0
     }
-    pub fn ram_start() -> usize {
+    pub fn ram_start(&self) -> usize {
         Memory::vram_size()
     }
-    pub fn stack_start() -> usize {
-        Memory::ram_start() + Memory::ram_size()
+    pub fn stack_start(&self) -> usize {
+        self.ram_start() + self.ram_size
     }
-    pub fn input_held() -> usize {
-        Memory::ram_start() + Memory::ram_size() - 2
+    pub fn input_held(&self) -> usize {
+        self.ram_start() + self.ram_size - 2
     }
-    pub fn input_pressed() -> usize {
-        Memory::ram_start() + Memory::ram_size() - 1
+    pub fn input_pressed(&self) -> usize {
+        self.ram_start() + self.ram_size - 1
     }
-    pub fn rom_start() -> usize {
-        Memory::stack_start() + Memory::stack_size()
+    pub fn rom_start(&self) -> usize {
+        self.stack_start() + self.stack_size
     }
     pub fn total_size(&self) -> usize {
         self.memory.len()
@@ -142,7 +143,7 @@ impl Memory {
 
     pub fn push8(&mut self, value: u8) {
         let sp = self.read_reg_long(LongRegisters::SP) as usize;
-        if sp + 1 > Memory::stack_size() {
+        if sp + 1 >= self.rom_start() {
             panic!("Stack overflow");
         }
         self.memory[sp] = value;
@@ -151,7 +152,7 @@ impl Memory {
 
     pub fn pop8(&mut self) -> u8 {
         let sp = self.read_reg_long(LongRegisters::SP) as usize;
-        if sp == 0 {
+        if sp - 1 < self.stack_start() {
             panic!("Stack underflow");
         }
         let data = self.memory[sp - 1];
@@ -161,12 +162,18 @@ impl Memory {
 
     pub fn push64(&mut self, value: u64) {
         let sp = self.read_reg_long(LongRegisters::SP);
+        if sp as usize + 8 >= self.rom_start() {
+            panic!("Stack overflow");
+        }
         self.put(sp as usize, &value.to_be_bytes());
         self.write_reg_long(LongRegisters::SP, sp + 8);
     }
 
     pub fn pop64(&mut self) -> u64 {
         let sp = self.read_reg_long(LongRegisters::SP) - 8;
+        if sp < self.stack_start() as u64 {  // we sub 8 in a line above
+            panic!("Stack underflow");
+        }
         self.write_reg_long(LongRegisters::SP, sp);
         u64::from_be_bytes((&*self.peek(sp as usize, 8)).try_into().unwrap())
     }

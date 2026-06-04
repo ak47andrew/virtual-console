@@ -1,6 +1,6 @@
 use raylib::prelude::*;
 use vea_shared::bytereader::ByteReader;
-use vea_shared::consts::{RAM_SIZE, SCREEN_SIZE, TARGET_RESOLUTION};
+use vea_shared::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::emulator::Emulator;
 use crate::memory::Memory;
 use vea_shared::registers::{LongRegisters, Registers};
@@ -8,11 +8,11 @@ use vea_shared::registers::{LongRegisters, Registers};
 // ── Window & panel geometry ───────────────────────────────────────────────────
 
 const SCALE: i32 = 3;
-pub const DBG_W: i32 = SCREEN_SIZE.x;
-pub const DBG_H: i32 = SCREEN_SIZE.y;
+pub const DBG_W: i32 = SCREEN_SIZE.x as i32;
+pub const DBG_H: i32 = SCREEN_SIZE.y as i32;
 
-const SCREEN_W: i32 = TARGET_RESOLUTION.x * SCALE; // 768
-const SCREEN_H: i32 = TARGET_RESOLUTION.y * SCALE; // 720
+const SCREEN_W: i32 = TARGET_RESOLUTION.x as i32 * SCALE; // 768
+const SCREEN_H: i32 = TARGET_RESOLUTION.y as i32 * SCALE; // 720
 const REG_H: i32 = DBG_H - SCREEN_H;               // 240  (bottom-left panel)
 const RIGHT_W: i32 = DBG_W - SCREEN_W;             // 512  (right column)
 const HALF_H: i32 = DBG_H / 2;                     // 480  (each right panel)
@@ -97,7 +97,7 @@ impl Debugger {
 
         // Scroll ROM panel (right column, bottom half)
         if mouse.x >= SCREEN_W as f32 && mouse.y >= HALF_H as f32 && wheel != 0.0 {
-            let rom_rows = (self.emulator.memory.total_size() - Memory::rom_start()) / BYTES_ROW;
+            let rom_rows = (self.emulator.memory.total_size() - self.emulator.memory.rom_start()) / BYTES_ROW;
             let max = rom_rows.saturating_sub(1);
             let mut s = self.rom_scroll;
             Self::scroll_val(&mut s, wheel, max);
@@ -106,7 +106,7 @@ impl Debugger {
 
         // RAM scroll (needs to be done separately due to borrow)
         if mouse.x >= SCREEN_W as f32 && mouse.y < HALF_H as f32 && wheel != 0.0 {
-            let max = (RAM_SIZE / BYTES_ROW).saturating_sub(1);
+            let max = (self.emulator.memory.ram_size / BYTES_ROW).saturating_sub(1);
             let mut s = self.ram_scroll;
             Self::scroll_val(&mut s, wheel, max);
             self.ram_scroll = s;
@@ -174,11 +174,11 @@ impl Debugger {
     /// Called by the emulator when it executes a Vsync opcode.
     /// Grabs toggle state → writes INPUT_HELD / INPUT_PRESSED → clears toggles.
     pub fn on_vsync(&mut self) {
-        let prev = self.emulator.memory.peek(Memory::input_held(), 1)[0];
+        let prev = self.emulator.memory.peek(self.emulator.memory.input_held(), 1)[0];
         let curr = self.input_toggles;
         let pressed = curr & !prev;
-        self.emulator.memory.put(Memory::input_held(), &[curr]);
-        self.emulator.memory.put(Memory::input_pressed(), &[pressed]);
+        self.emulator.memory.put(self.emulator.memory.input_held(), &[curr]);
+        self.emulator.memory.put(self.emulator.memory.input_pressed(), &[pressed]);
         self.input_toggles = 0;
     }
 
@@ -196,11 +196,11 @@ impl Debugger {
         self.draw_hex_panel(d, mouse,
                             SCREEN_W, 0, RIGHT_W, HALF_H,
                             "RAM",
-                            Memory::vram_size(), RAM_SIZE,
+                            Memory::vram_size(), self.emulator.memory.ram_size,
                             self.ram_scroll, None,
         );
         let pc = self.emulator.memory.read_pc();
-        let rom_start = Memory::rom_start();
+        let rom_start = self.emulator.memory.rom_start();
         let rom_size = self.emulator.memory.total_size() - rom_start;
         self.draw_hex_panel(d, mouse,
                             SCREEN_W, HALF_H, RIGHT_W, HALF_H,
@@ -442,11 +442,11 @@ impl Debugger {
         // RAM panel
         if let Some(addr) = self.hex_hover(mouse,
                                            SCREEN_W, 0, RIGHT_W, HALF_H,
-                                           Memory::vram_size(), RAM_SIZE, self.ram_scroll,
+                                           Memory::vram_size(), self.emulator.memory.ram_size, self.ram_scroll,
         ) { return Some(addr); }
 
         // ROM panel
-        let rom_start = Memory::rom_start();
+        let rom_start = self.emulator.memory.rom_start();
         let rom_size = self.emulator.memory.total_size() - rom_start;
         self.hex_hover(mouse,
                        SCREEN_W, HALF_H, RIGHT_W, HALF_H,
@@ -480,8 +480,8 @@ impl Debugger {
 
     pub fn scroll_to(&mut self, addr: usize) {
         let ram_start = Memory::vram_size();
-        let ram_end = Memory::rom_start();
-        let rom_start = Memory::rom_start();
+        let ram_end = self.emulator.memory.rom_start();
+        let rom_start = self.emulator.memory.rom_start();
         let rom_end = self.emulator.memory.total_size();
 
         if addr >= ram_start && addr < ram_end {
@@ -528,7 +528,7 @@ fn measure_text(string: &str, fontsize: i32) -> i32 {
 pub fn entry_debugger(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulator: Emulator) {
     let mut debugger = Debugger::new(emulator, &mut rl, &mut thread);
     let mut texture = rl.load_texture_from_image(&thread,
-                                                 &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
+                                                 &Image::gen_image_color(TARGET_RESOLUTION.x as i32, TARGET_RESOLUTION.y as i32, Color::BLACK)).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
 
     while !rl.window_should_close() {

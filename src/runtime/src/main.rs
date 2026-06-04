@@ -18,16 +18,22 @@ fn main() {
 
     #[allow(unused_mut)]
     let (mut rl, mut thread) = init()
-        .size(SCREEN_SIZE.x, SCREEN_SIZE.y)
+        .size(SCREEN_SIZE.x as i32, SCREEN_SIZE.y as i32)
         .title("Rust Raylib")
         .build();
-    let mut emulator = Emulator::new();
 
-    if args.len() > 0 && args[0] == "debug" {
-        emulator.load_program_to_rom(fs::read(args.get(1).unwrap_or(&"".to_string())));
+    let is_debug = if args.len() > 0 && args[0] == "debug" {
+        args.remove(0);
+        true
+    } else {
+        false
+    };
+
+    let mut emulator = Emulator::new(args.get(0).unwrap_or(&"".to_string()).to_string());
+
+    if is_debug {
         entry_debugger(rl, thread, emulator);
     } else {
-        emulator.load_program_to_rom(fs::read(args.get(0).unwrap_or(&"".to_string())));
         entry_emulator(rl, thread, emulator);
     }
 }

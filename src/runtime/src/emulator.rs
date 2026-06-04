@@ -8,6 +8,7 @@ use raylib::consts::TextureFilter;
 use raylib::drawing::RaylibDraw;
 use raylib::math::{Rectangle, Vector2};
 use vea_shared::bytereader::ByteReader;
+use vea_shared::cartridge::Cartridge;
 use vea_shared::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
 use crate::memory::Memory;
 use vea_shared::opcodes::Opcode;
@@ -16,24 +17,26 @@ use vea_shared::registers::{LongRegisters, Registers};
 
 pub struct Emulator {
     pub memory: Memory,
-    program: Vec<u8>,
     pub update_texture: bool,
+    pub cartridge: Cartridge,
 }
 
 impl Emulator {
-    pub fn new() -> Self {
-        Self {
-            memory: Memory::new(0),  // Dummy until load_program is called
-            program: vec![],
-            update_texture: false,
-        }
-    }
+    pub fn new(path: String) -> Self {
+        // Self {
+        //     memory: Memory::new(0),  // Dummy until load_program is called
+        //     program: vec![],
+        //     update_texture: false,
+        // }
 
-    pub fn load_program_to_rom(&mut self, program: Result<Vec<u8>, Error>) {
-        let program = program.unwrap_or_else(|_| vec![Opcode::Hlt.to_bytecode()]);
-        self.program = program;
-        self.memory = Memory::new(self.program.len());
-        self.memory.put(self.memory.read_pc(), self.program.as_slice());
+        let cartridge = Cartridge::load(path);
+        let memory = Memory::new(&cartridge);
+
+        Self {
+            memory,
+            update_texture: false,
+            cartridge
+        }
     }
 
     pub fn new_frame(&mut self, texture: &mut Texture2D, rl: &RaylibHandle) -> bool {
@@ -43,8 +46,8 @@ impl Emulator {
         self.update_texture = false;
 
         // Input time
-        self.memory.put(Memory::input_held(), &[self._get_held(rl)]);
-        self.memory.put(Memory::input_pressed(), &[self._get_pressed(rl)]);
+        self.memory.put(self.memory.input_held(), &[self._get_held(rl)]);
+        self.memory.put(self.memory.input_pressed(), &[self._get_pressed(rl)]);
 
         // Update VRAM
         let bytes = self.memory.vram();
@@ -76,7 +79,7 @@ impl Emulator {
     }
 
     pub fn put_pixel(&mut self, x: i32, y: i32, color: Color) {
-        self.memory.put(((y * TARGET_RESOLUTION.x + x) * 4) as usize, &[
+        self.memory.put(((y * TARGET_RESOLUTION.x as i32 + x) * 4) as usize, &[
             color.r, color.g, color.b, 255
         ])
     }
@@ -612,6 +615,7 @@ impl Emulator {
                 }
             },
             Opcode::Je => {
+                // Man I love how this is implemented. It's the most cursed while still readable piece of code I've ever seen
                 if match Operand::from_bytes(&mut self.memory) {
                     Operand::Register(reg) => {self.memory.read_reg(reg) != 0}
                     Operand::LongRegister(reg) => {self.memory.read_reg_long(reg) != 0}
@@ -675,7 +679,12 @@ impl Emulator {
 #[allow(unused_mut)]
 pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulator: Emulator) {
     let mut texture = rl.load_texture_from_image(&thread,
-                                                 &Image::gen_image_color(TARGET_RESOLUTION.x, TARGET_RESOLUTION.y, Color::BLACK)).unwrap();
+         &Image::gen_image_color(
+             TARGET_RESOLUTION.x as i32,
+             TARGET_RESOLUTION.y as i32,
+             Color::BLACK
+         )
+    ).unwrap();
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
 
     while !rl.window_should_close() {

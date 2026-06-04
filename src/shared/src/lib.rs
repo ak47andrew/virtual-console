@@ -4,6 +4,8 @@ pub mod opcodes;
 pub mod bytereader;
 pub mod helper;
 pub mod consts;
+pub mod manifest;
+pub mod cartridge;
 
 #[derive(Debug)]
 pub enum ParseError {
