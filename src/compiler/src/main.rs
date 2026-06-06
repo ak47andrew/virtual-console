@@ -1,11 +1,28 @@
+use std::io::Write;
 use std::{env, fs};
+use env_logger::fmt::style::{AnsiColor, Color, Style};
+use log::Level;
 use crate::entry::entry_compiler;
 
 mod entry;
 mod operand_checking;
 mod parsing;
+pub mod errors;
 
 fn main() {
+    env_logger::Builder::from_env(
+        env_logger::Env::default().default_filter_or("info")
+    )
+        .format(|buf, record| {
+            let level_style = buf.default_level_style(record.level());
+            let secondary_style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::BrightBlack)));
+            let ts = buf.timestamp();
+            const RESET_STYLE: &str = "\x1B[0m";
+
+            writeln!(buf, "[{secondary_style}{}{RESET_STYLE}][{level_style}{}{RESET_STYLE}]: {}", ts, record.level().as_str(), record.args())
+        })
+        .init();
+
     let mut args = env::args().collect::<Vec<String>>();
     if args.len() != 2 || !fs::exists(args[1].clone()).unwrap_or_else(|_| false) {
         eprintln!("Usage: {} <source folder>", args[0]);

@@ -18,8 +18,8 @@ mov 0xFF [?LL1]
 vsync
 add !G1 1
 mov !A !G1
-jne !G1 push_done
-jmp push_loop
+jne !G1 $push_done
+jmp $push_loop
 push_done:
 
 ; Pass 2: pop x values back, draw return trip in different color
@@ -34,8 +34,8 @@ mul ?LL1 &1024
 add ?LL1 ?LL2
 mov 0xAA [?LL1]
 vsync
-jne !A pop_done
-jmp pop_loop
+jne !A $pop_done
+jmp $pop_loop
 pop_done:
 
 hlt

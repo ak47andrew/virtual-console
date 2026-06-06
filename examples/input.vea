@@ -24,26 +24,26 @@ mov $495758 !G3
 
 check_up:
 and !G3 0b10000000
-jne !A check_down
+jne !A $check_down
 sub !G2 1
 mov !A !G2
 
 check_down:
 and !G3 0b01000000
-jne !A check_right
+jne !A $check_right
 add !G2 1
 mov !A !G2
 
 check_right:
 and !G3 0b00010000
-jne !A check_left
+jne !A $check_left
 add !G1 1
 mov !A !G1
 
 check_left:
 and !G3 0b00100000
-jne !A frame
+jne !A $frame
 sub !G1 1
 mov !A !G1
 
-jmp frame
+jmp $frame

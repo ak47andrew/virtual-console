@@ -22,11 +22,14 @@ pub struct Settings {
 }
 
 impl Manifest {
-    pub fn from_string(string: String) -> Manifest {
-        toml::from_str(&string).unwrap()
+    pub fn from_string(string: String) -> Option<Manifest> {
+        match toml::from_str(&string) {
+            Ok(manifest) => Some(manifest),
+            Err(e) => {None}
+        }
     }
 
-    pub fn from_file(filename: PathBuf) -> Manifest {
+    pub fn from_file(filename: PathBuf) -> Option<Manifest> {
         let text = read_to_string(filename).unwrap();
         Self::from_string(text)
     }

@@ -27,16 +27,16 @@ mov &0x00000000FFFFFFFF ?GP1
 mov &0 ?GP2
 
 loop:
-call render
-call update_pixel
-call update_addr
+call $render
+call $update_pixel
+call $update_addr
 
 ; If we're at the end of VRAM - stop
 sub &245760 ?GP2
-je !Z exit
+je !Z $exit
 
 ; Otherwise - repeat
-jmp loop
+jmp $loop
 
 exit:
 hlt

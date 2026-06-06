@@ -4,7 +4,7 @@ use unsigned_varint::encode as varint;
 use crate::bytereader::ByteReader;
 use crate::registers::{LongRegisters, Registers};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum OperandKind {
     Address,
     Immediate,  // 1 byte

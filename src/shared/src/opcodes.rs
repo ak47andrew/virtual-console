@@ -1,5 +1,3 @@
-use crate::ParseError;
-
 #[derive(Copy, Clone, Debug)]
 pub enum Opcode {
     Noop, Hlt, Vsync,
@@ -45,33 +43,33 @@ impl Opcode {
         }
     }
     
-    pub fn from_bytecode(code: u8) -> Result<Self, ParseError> {
+    pub fn from_bytecode(code: u8) -> Option<Self> {
         match code {
-            0x00 => Ok(Opcode::Noop),
-            0x01 => Ok(Opcode::Hlt),
-            0x02 => Ok(Opcode::Vsync),
-            0x10 => Ok(Opcode::Mov),
-            0x11 => Ok(Opcode::Trunc),
-            0x12 => Ok(Opcode::Ext),
-            0x13 => Ok(Opcode::Copy),
-            0x20 => Ok(Opcode::Add),
-            0x21 => Ok(Opcode::Sub),
-            0x22 => Ok(Opcode::Mul),
-            0x23 => Ok(Opcode::Div),
-            0x30 => Ok(Opcode::And),
-            0x31 => Ok(Opcode::Or),
-            0x32 => Ok(Opcode::Xor),
-            0x33 => Ok(Opcode::Not),
-            0x34 => Ok(Opcode::Shl),
-            0x35 => Ok(Opcode::Shr),
-            0x40 => Ok(Opcode::Jmp),
-            0x41 => Ok(Opcode::Je),
-            0x42 => Ok(Opcode::Jne),
-            0x50 => Ok(Opcode::PUSH),
-            0x51 => Ok(Opcode::POP),
-            0x52 => Ok(Opcode::RET),
-            0x53 => Ok(Opcode::CALL),
-            _ => Err(ParseError::UnknownOpcode(code.to_string()))
+            0x00 => Some(Opcode::Noop),
+            0x01 => Some(Opcode::Hlt),
+            0x02 => Some(Opcode::Vsync),
+            0x10 => Some(Opcode::Mov),
+            0x11 => Some(Opcode::Trunc),
+            0x12 => Some(Opcode::Ext),
+            0x13 => Some(Opcode::Copy),
+            0x20 => Some(Opcode::Add),
+            0x21 => Some(Opcode::Sub),
+            0x22 => Some(Opcode::Mul),
+            0x23 => Some(Opcode::Div),
+            0x30 => Some(Opcode::And),
+            0x31 => Some(Opcode::Or),
+            0x32 => Some(Opcode::Xor),
+            0x33 => Some(Opcode::Not),
+            0x34 => Some(Opcode::Shl),
+            0x35 => Some(Opcode::Shr),
+            0x40 => Some(Opcode::Jmp),
+            0x41 => Some(Opcode::Je),
+            0x42 => Some(Opcode::Jne),
+            0x50 => Some(Opcode::PUSH),
+            0x51 => Some(Opcode::POP),
+            0x52 => Some(Opcode::RET),
+            0x53 => Some(Opcode::CALL),
+            _ => None
         }
     }
 }

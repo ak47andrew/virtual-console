@@ -4,12 +4,12 @@ use num_traits::{Num, ToPrimitive};
 use vea_shared::consts::TARGET_RESOLUTION;
 use vea_shared::manifest::Manifest;
 use crate::operand_checking::get_signature;
-use vea_shared::ParseError;
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::{Operand, OperandKind};
 use vea_shared::registers::{LongRegisters, Registers};
+use crate::errors::CompilationError;
 
-pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<(Vec<OperandKind>, Vec<Operand>), ParseError> {
+pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<(Vec<OperandKind>, Vec<Operand>), CompilationError> {
     let mut kinds = Vec::new();
     let mut operands = Vec::new();
     for arg in args {
@@ -24,13 +24,20 @@ fn rom_start(manifest: &Manifest) -> u64 {
     TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 + manifest.settings.ram_size + manifest.settings.stack_size
 }
 
-fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Operand, ParseError> {
-    if labels.contains_key(*token) {
-        return Ok(Operand::Address(*labels.get(*token).unwrap() + rom_start(manifest)))
-    }
-
+fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Operand, CompilationError> {
     if token.starts_with("$") {
-        return Ok(Operand::Address(parse_u64_num(token[1..].to_string())?))
+        return match parse_address_num(token[1..].to_string()) {
+            Ok(addr) => Ok(Operand::Address(addr)),
+            Err(err) => {
+                if is_first_pass {
+                    Ok(Operand::Address(0))
+                } else if labels.contains_key(&token[1..]) {
+                    Ok(Operand::Address(*labels.get(&token[1..]).unwrap() + rom_start(manifest)))
+                } else {
+                    Err(err)
+                }
+            }
+        }
     }
 
     if token.starts_with("!") {
@@ -44,7 +51,7 @@ fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: boo
             "G3" => Ok(Operand::Register(Registers::G3)),
             "G4" => Ok(Operand::Register(Registers::G4)),
             "G5" => Ok(Operand::Register(Registers::G5)),
-            _ => Err(ParseError::InvalidRegister(token.to_string())),
+            _ => Err(CompilationError::UnknownRegister(token.to_string())),
         }
     }
     if token.starts_with("?") {
@@ -55,30 +62,32 @@ fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: boo
             "GP1" => Ok(Operand::LongRegister(LongRegisters::GP1)),
             "GP2" => Ok(Operand::LongRegister(LongRegisters::GP2)),
             "GP3" => Ok(Operand::LongRegister(LongRegisters::GP3)),
-            _ => Err(ParseError::InvalidRegister(token.to_string())),
+            _ => Err(CompilationError::UnknownRegister(token.to_string())),
         }
     }
     if token.starts_with("[") && token.ends_with("]") {
         let reg_str = &token[1..token.len() - 1];
         return match parse_operand(&reg_str, labels, is_first_pass, manifest)? {
             Operand::LongRegister(reg) => Ok(Operand::IndirectAddress(reg)),
-            _ => Err(ParseError::InvalidOperand(token.to_string())),
+            _ => Err(CompilationError::IncorrectIndirectAddressBody(token.to_string())),
         };
     }
 
-    match parse_numerical_operand(token.to_string()) {
-        Ok(v) => {Ok(v)}
-        Err(e) => {
-            if is_first_pass {
-                Ok(Operand::Address(0))
-            } else {
-                Err(e)
-            }
-        }
-    }
+    parse_numerical_operand(token.to_string())
+
+    // match parse_numerical_operand(token.to_string()) {
+    //     Ok(v) => {Ok(v)}
+    //     Err(e) => {
+    //         if is_first_pass {
+    //             Ok(Operand::Address(0))
+    //         } else {
+    //             Err(e)
+    //         }
+    //     }
+    // }
 }
 
-pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
+pub fn parse_opcode(token: &str) -> Result<Opcode, CompilationError> {
     match token { 
         "noop" => Ok(Opcode::Noop),
         "hlt" => Ok(Opcode::Hlt),
@@ -110,14 +119,14 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, ParseError> {
         "ret" => Ok(Opcode::RET),
         "call" => Ok(Opcode::CALL),
 
-        _ => Err(ParseError::UnknownOpcode(token.to_string()))
+        _ => Err(CompilationError::UnknownOpcode(token.to_string()))
     }
 }
 
-fn parse_numerical_operand(input: String) -> Result<Operand, ParseError> {
+fn parse_numerical_operand(input: String) -> Result<Operand, CompilationError> {
     let mut input = input;
     if input.is_empty() {
-        return Err(ParseError::InvalidNumber(input));
+        return Err(CompilationError::InvalidOperand(input));
     }
     let kind = match input.chars().next().unwrap() {
         '&' => {
@@ -137,16 +146,16 @@ fn parse_numerical_operand(input: String) -> Result<Operand, ParseError> {
 
     match kind {
         OperandKind::Immediate => {
-            if num > BigUint::from(u8::MAX) {
-                return Err(ParseError::InvalidNumber(input))
+            match num.to_u8() {
+                Some(v) => Ok(Operand::Immediate(v)),
+                None => Err(CompilationError::ImmediateOverflow(input)),
             }
-            Ok(Operand::Immediate(num.to_u8().unwrap()))
         }
         OperandKind::LongImmediate => {
-            if num > BigUint::from(u64::MAX) {
-                return Err(ParseError::InvalidNumber(input))
+            match num.to_u64() {
+                Some(v) => Ok(Operand::LongImmediate(v)),
+                None => Err(CompilationError::LongImmediateOverflow(input)),
             }
-            Ok(Operand::LongImmediate(num.to_u64().unwrap()))
         }
         OperandKind::LongerImmediate => {
             Ok(Operand::LongerImmediate(num))
@@ -155,7 +164,7 @@ fn parse_numerical_operand(input: String) -> Result<Operand, ParseError> {
     }
 }
 
-fn parse_num(input: String) -> Result<BigUint, ParseError> {
+fn parse_num(input: String) -> Result<BigUint, CompilationError> {
     let (radix, number_str) = if let Some(hex) = input.strip_prefix("0x") {
         (16, hex)
     } else if let Some(bin) = input.strip_prefix("0b") {
@@ -165,32 +174,22 @@ fn parse_num(input: String) -> Result<BigUint, ParseError> {
     };
 
     BigUint::from_str_radix(number_str, radix)
-        .map_err(|_| ParseError::InvalidNumber(input))
+        .map_err(|_| CompilationError::InvalidOperand(input))
 }
 
-pub fn parse_u64_num(input: String) -> Result<u64, ParseError> {
+pub fn parse_address_num(input: String) -> Result<u64, CompilationError> {
     let num = parse_num(input.clone())?;
     match num.to_u64() {
         Some(num) => Ok(num),
-        None => Err(ParseError::InvalidNumber(input))
+        None => Err(CompilationError::AddressOverflow(input))
     }
 }
 
-pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Vec<u8> {
-    let result = parse_operands(args, labels, is_first_pass, manifest);
-    let (kinds, operands) = match result {
-        Ok((kinds, operands)) => {
-            (kinds, operands)
-        }
-        Err(e) => {
-            println!("Failed parsing operands: {:?}. Line {} is gonna be treated as noop", e, line);
-            return vec![0];
-        }
-    };
+pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Vec<u8>, CompilationError> {
+    let (kinds, operands) = parse_operands(args, labels, is_first_pass, manifest)?;
 
     if !get_signature(opcode).check(&kinds){
-        println!("Incorrect operands\n{} is gonna be treated as noop", line);
-        return vec![0];
+        return Err(CompilationError::InvalidOpcodeSignature((opcode, kinds)))
     }
 
     let mut output = vec![opcode.to_bytecode()];
@@ -199,5 +198,5 @@ pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap
         output.extend(operand.to_bytes());
     }
 
-    output
+    Ok(output)
 }

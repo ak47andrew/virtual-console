@@ -6,12 +6,3 @@ pub mod helper;
 pub mod consts;
 pub mod manifest;
 pub mod cartridge;
-
-#[derive(Debug)]
-pub enum ParseError {
-    InvalidRegister(String),
-    InvalidNumber(String),
-    InvalidOperand(String),
-    InvalidAddress(String),
-    UnknownOpcode(String),
-}
