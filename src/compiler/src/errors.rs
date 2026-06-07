@@ -1,6 +1,6 @@
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::OperandKind;
-use crate::operand_checking::get_signature;
+use crate::vea::operand_checking::get_signature;
 
 pub enum CompilationError {
     UnknownRegister(String),

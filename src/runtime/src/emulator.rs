@@ -49,17 +49,20 @@ impl Emulator {
         self.memory.put(self.memory.input_held(), &[self._get_held(rl)]);
         self.memory.put(self.memory.input_pressed(), &[self._get_pressed(rl)]);
 
-        // Update VRAM
-        let bytes = self.memory.vram();
+        texture.update_texture(&self.calculate_vram()).expect("Failed to update texture");
+        true
+    }
 
-        // Create a copy with forced alpha = 255
-        let mut opaque_bytes = bytes.to_vec();
-        for i in (3..opaque_bytes.len()).step_by(4) {
-            opaque_bytes[i] = 255;
+    fn calculate_vram(&self) -> Vec<u8> {
+        // Update VRAM
+        let pixels = self.memory.vram();
+        let mut out = Vec::new();
+
+        for pixel in pixels {
+            out.extend(self.memory.get_color(*pixel))
         }
 
-        texture.update_texture(&opaque_bytes).expect("Failed to update texture");
-        true
+        out
     }
 
     pub fn _get_pressed(&self, rl: &RaylibHandle) -> u8 {

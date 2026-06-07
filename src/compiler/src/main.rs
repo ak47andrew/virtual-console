@@ -5,9 +5,9 @@ use log::Level;
 use crate::entry::entry_compiler;
 
 mod entry;
-mod operand_checking;
-mod parsing;
 pub mod errors;
+pub mod vea;
+pub mod palette;
 
 fn main() {
     env_logger::Builder::from_env(

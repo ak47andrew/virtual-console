@@ -9,6 +9,7 @@ use crate::manifest::Manifest;
 pub struct Cartridge {
     pub manifest: Manifest,
     pub entry_bytecode: Vec<u8>,
+    pub palette: Vec<u8>,
 }
 
 fn load_file(archive: &mut ZipArchive<File>, filename: &str) -> Vec<u8> {
@@ -25,7 +26,7 @@ fn parse_from_zip<T: DeserializeOwned>(archive: &mut ZipArchive<File>, filename:
 
 impl Cartridge {
     pub fn new(manifest: Manifest) -> Cartridge {
-        Cartridge { manifest, entry_bytecode: vec![] }
+        Cartridge { manifest, entry_bytecode: vec![], palette: vec![] }
     }
     
     /// The caller is responsible for validation of the filename, or we'll get a panic
@@ -35,9 +36,10 @@ impl Cartridge {
         let mut archive = ZipArchive::new(file).unwrap();
 
         let manifest = parse_from_zip::<Manifest>(&mut archive, "manifest.toml");
-        let entry_bytecode = load_file(&mut archive, manifest.entry.as_str());
+        let entry_bytecode = load_file(&mut archive, manifest.resources.entry.as_str());
+        let palette = load_file(&mut archive, manifest.resources.palette.as_str());
 
-        Self { manifest, entry_bytecode }
+        Self { manifest, entry_bytecode, palette }
     }
 
     pub fn save(&self, filename: String) {
@@ -53,8 +55,13 @@ impl Cartridge {
         // It's expected that compiler is gonna change the entry name to entry.veb and store it there
         // after compilation, but it's gonna work either way. because of `self.manifest.entry` here.
         // This convention is purely for geeks unarchiving the fuck out of the cartridge
-        zip.start_file(&self.manifest.entry, options).unwrap();
+        zip.start_file(&self.manifest.resources.entry, options).unwrap();
         zip.write_all(self.entry_bytecode.as_slice()).unwrap();
+
+        // Same here, but with palette.rfe, where rfe stands for "random fucking extension".
+        // I could use like .aco, tho I'm not sure if it's the same thing
+        zip.start_file(&self.manifest.resources.palette.as_str(), options).unwrap();
+        zip.write_all(self.palette.as_slice()).unwrap();
 
         zip.finish().unwrap();
     }

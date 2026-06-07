@@ -8,6 +8,7 @@ use vea_shared::cartridge::Cartridge;
 
 pub struct Memory {
     memory: Vec<u8>,
+    palette: Vec<u8>,
     pub ram_size: usize,
     pub stack_size: usize,
     pub rom_size: usize,
@@ -41,11 +42,15 @@ impl Memory {
             stack_size: cartridge.manifest.settings.stack_size as usize,
             registers: RegisterMemory::new(),
             rom_size: cartridge.entry_bytecode.len(),
-            memory: vec![0; Memory::vram_size() + cartridge.manifest.settings.ram_size as usize + cartridge.manifest.settings.stack_size as usize + cartridge.entry_bytecode.len()]
+            memory: vec![0; Memory::vram_size() + cartridge.manifest.settings.ram_size as usize + cartridge.manifest.settings.stack_size as usize + cartridge.entry_bytecode.len()],
+            palette: cartridge.palette.clone()
         };
         obj.set_pc(obj.rom_start());
         obj.write_reg_long(LongRegisters::SP, obj.stack_start() as u64);
         obj.put(obj.rom_start(), cartridge.entry_bytecode.as_slice());
+        if obj.palette.len() < 255 * 4 {
+            obj.palette.extend(vec![0; 255 * 4 - obj.palette.len()]);
+        }
 
         obj
     }
@@ -54,8 +59,13 @@ impl Memory {
         &self.memory[self.vram_start()..self.vram_start() + Memory::vram_size()]
     }
 
+    pub fn get_color(&self, index: u8) -> &[u8] {
+        let index = index as usize;
+        &self.palette[index * 4..=index * 4 + 3]
+    }
+
     pub fn vram_size() -> usize {
-        (TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4) as usize
+        (TARGET_RESOLUTION.x * TARGET_RESOLUTION.y) as usize
     }
     pub fn rom_size(&self) -> usize {
         self.rom_size

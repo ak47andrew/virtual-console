@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Manifest {
-    pub entry: String,
     pub metadata: Option<Metadata>,
-    pub settings: Settings
+    pub settings: Settings,
+    pub resources: Resources
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -21,15 +21,21 @@ pub struct Settings {
     pub stack_size: u64,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Resources {
+    pub entry: String,
+    pub palette: String,
+}
+
 impl Manifest {
     pub fn from_string(string: String) -> Option<Manifest> {
         match toml::from_str(&string) {
             Ok(manifest) => Some(manifest),
-            Err(e) => {None}
+            Err(_) => {None}
         }
     }
 
-    pub fn from_file(filename: PathBuf) -> Option<Manifest> {
+    pub fn from_file(filename: &PathBuf) -> Option<Manifest> {
         let text = read_to_string(filename).unwrap();
         Self::from_string(text)
     }

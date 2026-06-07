@@ -3,11 +3,11 @@ use num_bigint::BigUint;
 use num_traits::{Num, ToPrimitive};
 use vea_shared::consts::TARGET_RESOLUTION;
 use vea_shared::manifest::Manifest;
-use crate::operand_checking::get_signature;
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::{Operand, OperandKind};
 use vea_shared::registers::{LongRegisters, Registers};
 use crate::errors::CompilationError;
+use crate::vea::operand_checking::get_signature;
 
 pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<(Vec<OperandKind>, Vec<Operand>), CompilationError> {
     let mut kinds = Vec::new();
@@ -21,7 +21,7 @@ pub fn parse_operands(args: &[&str], labels: &HashMap<String, u64>, is_first_pas
 }
 
 fn rom_start(manifest: &Manifest) -> u64 {
-    TARGET_RESOLUTION.x * TARGET_RESOLUTION.y * 4 + manifest.settings.ram_size + manifest.settings.stack_size
+    TARGET_RESOLUTION.x * TARGET_RESOLUTION.y + manifest.settings.ram_size + manifest.settings.stack_size
 }
 
 fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Operand, CompilationError> {
@@ -74,17 +74,6 @@ fn parse_operand(token: &&str, labels: &HashMap<String, u64>, is_first_pass: boo
     }
 
     parse_numerical_operand(token.to_string())
-
-    // match parse_numerical_operand(token.to_string()) {
-    //     Ok(v) => {Ok(v)}
-    //     Err(e) => {
-    //         if is_first_pass {
-    //             Ok(Operand::Address(0))
-    //         } else {
-    //             Err(e)
-    //         }
-    //     }
-    // }
 }
 
 pub fn parse_opcode(token: &str) -> Result<Opcode, CompilationError> {
