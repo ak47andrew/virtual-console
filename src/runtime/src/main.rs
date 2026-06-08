@@ -9,9 +9,6 @@ use crate::debugger::entry_debugger;
 use crate::emulator::{entry_emulator, Emulator};
 
 
-// println!("{}", Memory::input_held());  // 495758
-// println!("{}", Memory::input_pressed());  // 495759
-// return;
 fn main() {
     let mut args = env::args().collect::<Vec<String>>();
     args.remove(0);
@@ -29,7 +26,7 @@ fn main() {
         false
     };
 
-    let mut emulator = Emulator::new(args.get(0).unwrap_or(&"".to_string()).to_string());
+    let emulator = Emulator::new(args.get(0).unwrap_or(&"".to_string()).to_string());
 
     if is_debug {
         entry_debugger(rl, thread, emulator);

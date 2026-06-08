@@ -48,8 +48,8 @@ impl Memory {
         obj.set_pc(obj.rom_start());
         obj.write_reg_long(LongRegisters::SP, obj.stack_start() as u64);
         obj.put(obj.rom_start(), cartridge.entry_bytecode.as_slice());
-        if obj.palette.len() < 255 * 4 {
-            obj.palette.extend(vec![0; 255 * 4 - obj.palette.len()]);
+        if obj.palette.len() < 256 * 4 {
+            obj.palette.extend(vec![0; 256 * 4 - obj.palette.len()]);
         }
 
         obj

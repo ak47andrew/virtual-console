@@ -1,49 +1,41 @@
-; G1 - x, G2 - y, G3 - input, GP1 - color of the guy, GP2 - prev pos
-mov 0 !G1
-mov 200 !G2
-mov &0x00FF00FF00000000 ?GP1
+; GP1 - pos, G3 - input, G4 - color of the guy, GP2 - prev pos
+mov &400 ?GP1
+mov 9 !G4
 
 frame:
 ; Draw the guy
-; Get pixel addr (1024 = 256 * 4)
-ext !G1 ?LL1
-mul ?LL1 &4
-mov ?LL1 ?LL2
-ext !G2 ?LL1
-mul ?LL1 &1024
-add ?LL1 ?LL2
 ; Clear last place, draw on the new one and save the pos
-mov &0 [?GP2]
-mov ?GP1 [?LL1]
-mov ?LL1 ?GP2
-
+mov 1 [?GP2]
 vsync
+mov !G4 [?GP1]
+vsync
+mov ?GP1 ?GP2
 
-; Handle input. $495758 - INPUT_HELD
-mov $495758 !G3
+; Handle input. $63438 - INPUT_HELD
+mov $63438 !G3
 
 check_up:
 and !G3 0b10000000
 jne !A $check_down
-sub !G2 1
-mov !A !G2
+sub ?GP1 &256
+mov ?LL1 ?GP1
 
 check_down:
 and !G3 0b01000000
 jne !A $check_right
-add !G2 1
-mov !A !G2
+add ?GP1 &256
+mov ?LL1 ?GP1
 
 check_right:
 and !G3 0b00010000
 jne !A $check_left
-add !G1 1
-mov !A !G1
+add ?GP1 &1
+mov ?LL1 ?GP1
 
 check_left:
 and !G3 0b00100000
 jne !A $frame
-sub !G1 1
-mov !A !G1
+sub ?GP1 &1
+mov ?LL1 ?GP1
 
 jmp $frame

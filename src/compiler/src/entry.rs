@@ -5,7 +5,7 @@ use vea_shared::manifest::Manifest;
 use crate::palette::parse_palette;
 use crate::vea::assemble_vea;
 
-pub fn entry_compiler(folder: &str) {
+pub fn entry_compiler(folder: &str) -> bool {
     info!("Compiling project folder \"{}\"...", folder);
 
     // Step 1. Parse manifest
@@ -13,7 +13,7 @@ pub fn entry_compiler(folder: &str) {
     let manifest = Manifest::from_file(&manifest_filepath);
     if manifest.is_none() {
         error!("Failed to parse manifest file: {}. Aborting", manifest_filepath.display());
-        return;
+        return false;
     }
     info!("Parsed manifest at {}", manifest_filepath.display());
     let mut cartridge = Cartridge::new(manifest.unwrap());
@@ -24,7 +24,7 @@ pub fn entry_compiler(folder: &str) {
     let entry_bytecode = assemble_vea(&entry_path, &cartridge.manifest);
     if entry_bytecode.is_none() {
         error!("Error occurred while assembling entry script. Aborting");
-        return;
+        return false;
     }
     info!("Assembled entry script at {} totaling {} bytes", entry_path.display(), entry_bytecode.as_ref().unwrap().len());
 
@@ -37,7 +37,7 @@ pub fn entry_compiler(folder: &str) {
     let palette = parse_palette(&palette_path);
     if palette.is_none() {
         error!("Error occurred while converting palette. Aborting");
-        return;
+        return false;
     }
     info!("Converted palette at {}", palette_path.display());
 
@@ -48,4 +48,6 @@ pub fn entry_compiler(folder: &str) {
     let filename = folder.to_string() + ".vec";
     cartridge.save(filename.clone());  // Virtual Emulator Cartridge
     info!("Saved cartridge to {:?}", filename);
+
+    true
 }

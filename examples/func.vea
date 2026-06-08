@@ -1,30 +1,28 @@
 ; Variation of additive.vea split up into functions
-jmp setup
+jmp $setup
 
 update_pixel:
 ; Randomizing next pixel
-mul ?GP1 &1103515245
-add ?LL1 &12345
-or ?LL1 &0x000000FF ; Ensuring alpha is 255
-mov ?LL1 ?GP1 ; Storing it back
+mul !G1 137
+add !A 187
+div !A 32
+mov !X !G1 ; Storing it back
 ret
 
 render:
-; All math is done on lower 32 bits, but to draw a pixel at address we need it at higher 32 so we shift it left
-shl ?GP1 &32
-mov ?LL1 [?GP2] ; Set the actual pixel
+mov !G1 [?GP2] ; Set the pixel
 vsync ; Display progress
 ret
 
 update_addr:
-; Moving to the next pixel in VRAM (pixel is 4 bytes long)
-add ?GP2 &4
+; Moving to the next pixel in VRAM
+add ?GP2 &1
 mov ?LL1 ?GP2
 ret
 
 setup:
-mov &0x00000000FFFFFFFF ?GP1
-mov &0 ?GP2
+mov 2 !G1  ; Current color
+mov &0 ?GP2  ; Current position
 
 loop:
 call $render
@@ -32,7 +30,7 @@ call $update_pixel
 call $update_addr
 
 ; If we're at the end of VRAM - stop
-sub &245760 ?GP2
+sub &61440 ?GP2
 je !Z $exit
 
 ; Otherwise - repeat

@@ -1,29 +1,27 @@
 ; WARNING! It's hella slow: 10-15 minutes of runtime. Just for demonstration purposes
-; Setup. GP1 is a pixel, GP2 is an address pointing to VRAM
-mov &0x00000000000000FF ?GP1
+; Setup. G1 is a pixel, GP2 is an address pointing to VRAM
+mov 0 !G1
 mov &0 ?GP2
 
 loop:
-; All math is done on lower 32 bits, but to draw a pixel at address we need it at higher 32 so we shift it left
-shl ?GP1 &32
-; Set the actual pixel
-mov ?LL1 [?GP2]
+; Set the pixel
+mov !G1 [?GP2]
 ; Display progress
 vsync
 
 ; Incrementing color pixel
-add ?GP1 &1
-; Ensuring alpha is 255
-or ?LL1 &0x000000FF
+add !G1 1
+; Wrap to 32 (mod is in X reg)
+div !A 32
 ; Storing it back
-mov ?LL1 ?GP1
+mov !X !G1
 
-; Moving to the next pixel in VRAM (pixel is 4 bytes long)
-add ?GP2 &4
+; Moving to the next pixel in VRAM
+add ?GP2 &1
 mov ?LL1 ?GP2
 
 ; If we're at the end of VRAM - stop
-sub &245760 ?GP2
+sub &61440 ?GP2
 je !Z $exit
 
 ; Otherwise - repeat

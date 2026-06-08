@@ -1,4 +1,3 @@
-use std::io::Error;
 use num_bigint::BigUint;
 use num_traits::{ToBytes, ToPrimitive};
 use raylib::prelude::{Color, Image, RaylibTexture2D, Texture2D};
@@ -23,12 +22,6 @@ pub struct Emulator {
 
 impl Emulator {
     pub fn new(path: String) -> Self {
-        // Self {
-        //     memory: Memory::new(0),  // Dummy until load_program is called
-        //     program: vec![],
-        //     update_texture: false,
-        // }
-
         let cartridge = Cartridge::load(path);
         let memory = Memory::new(&cartridge);
 
@@ -81,15 +74,8 @@ impl Emulator {
         out
     }
 
-    pub fn put_pixel(&mut self, x: i32, y: i32, color: Color) {
-        self.memory.put(((y * TARGET_RESOLUTION.x as i32 + x) * 4) as usize, &[
-            color.r, color.g, color.b, 255
-        ])
-    }
-
     pub fn step(&mut self) {
         let opcode = Opcode::from_bytecode(self.memory.read_u8()).unwrap();
-        // println!("{:?}", opcode);
         match opcode {
             Opcode::Noop => {} // Noop
             Opcode::Hlt => {
@@ -128,7 +114,7 @@ impl Emulator {
                         self.memory.put(self.memory.read_reg_long(reg) as usize, &v.to_be_bytes());
                     }
                     (Operand::Register(reg1), Operand::IndirectAddress(reg2)) => {
-                        self.memory.put(self.memory.read_reg_long(reg2) as usize, &[self.memory.read_reg(reg1)])
+                        self.memory.put(self.memory.read_reg_long(reg2) as usize, &[self.memory.read_reg(reg1)]);
                     }
                     (Operand::LongRegister(reg1), Operand::IndirectAddress(reg2)) => {
                         self.memory.put(self.memory.read_reg_long(reg2) as usize, &self.memory.read_reg_long(reg1).to_be_bytes())

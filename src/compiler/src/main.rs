@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::{env, fs};
+use std::process::ExitCode;
 use env_logger::fmt::style::{AnsiColor, Color, Style};
 use log::Level;
 use crate::entry::entry_compiler;
@@ -9,7 +10,7 @@ pub mod errors;
 pub mod vea;
 pub mod palette;
 
-fn main() {
+fn main() -> ExitCode {
     env_logger::Builder::from_env(
         env_logger::Env::default().default_filter_or("info")
     )
@@ -26,7 +27,7 @@ fn main() {
     let mut args = env::args().collect::<Vec<String>>();
     if args.len() != 2 || !fs::exists(args[1].clone()).unwrap_or_else(|_| false) {
         eprintln!("Usage: {} <source folder>", args[0]);
-        return;
+        return ExitCode::FAILURE;
     }
-    entry_compiler(args[1].as_str())
+    if entry_compiler(args[1].as_str()) { ExitCode::SUCCESS } else { ExitCode::FAILURE }
 }
