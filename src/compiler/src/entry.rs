@@ -1,7 +1,8 @@
 use std::path::Path;
 use log::{debug, error, info};
-use vea_shared::cartridge::Cartridge;
+use vea_shared::cartridge::{get_bg_path, Cartridge};
 use vea_shared::manifest::Manifest;
+use crate::images::{encode_bg, encode_chr};
 use crate::palette::parse_palette;
 use crate::vea::assemble_vea;
 
@@ -26,10 +27,11 @@ pub fn entry_compiler(folder: &str) -> bool {
         error!("Error occurred while assembling entry script. Aborting");
         return false;
     }
-    info!("Assembled entry script at {} totaling {} bytes", entry_path.display(), entry_bytecode.as_ref().unwrap().len());
+    let entry_bytecode = entry_bytecode.unwrap();
+    info!("Assembled entry script at {} totaling {} bytes", entry_path.display(), entry_bytecode.len());
 
     cartridge.manifest.resources.entry = "entry.veb".into();
-    cartridge.entry_bytecode = entry_bytecode.unwrap();
+    cartridge.entry_bytecode = entry_bytecode;
     debug!("Inserted entry script into cartridge");
 
     // Step 3. Convert palette
@@ -43,6 +45,34 @@ pub fn entry_compiler(folder: &str) -> bool {
 
     cartridge.manifest.resources.palette = "palette.rfn".into();
     cartridge.palette = palette.unwrap();
+
+    // Step 4a. Background encoding
+    for (idx, path) in &cartridge.manifest.resources.bg {
+        debug!("{} -> {}", idx, path);
+        let bg = encode_bg(Path::new(folder).join(path));
+        if bg.is_none() {
+            error!("Error occurred while encoding background. Aborting");
+            return false;
+        }
+        cartridge.bg_data.insert(*idx, bg.unwrap());
+    }
+    for idx in &cartridge.manifest.resources.bg.keys().cloned().collect::<Vec<_>>() {
+        cartridge.manifest.resources.bg.insert(*idx, get_bg_path(idx));
+    }
+
+    // Step 4b. Sprite encoding
+    for (idx, path) in &cartridge.manifest.resources.img {
+        debug!("{} -> {}", idx, path);
+        let sprite = encode_chr(Path::new(folder).join(path));
+        if sprite.is_none() {
+            error!("Error occurred while encoding sprite. Aborting");
+            return false;
+        }
+        cartridge.sprite_data.insert(*idx, sprite.unwrap());
+    }
+    for idx in &cartridge.manifest.resources.img.keys().cloned().collect::<Vec<_>>() {
+        cartridge.manifest.resources.img.insert(*idx, get_bg_path(idx));
+    }
 
     // Step <last>. Save cartridge
     let filename = folder.to_string() + ".vec";

@@ -2,13 +2,13 @@ use std::io::Write;
 use std::{env, fs};
 use std::process::ExitCode;
 use env_logger::fmt::style::{AnsiColor, Color, Style};
-use log::Level;
 use crate::entry::entry_compiler;
 
 mod entry;
 pub mod errors;
 pub mod vea;
 pub mod palette;
+pub mod images;
 
 fn main() -> ExitCode {
     env_logger::Builder::from_env(

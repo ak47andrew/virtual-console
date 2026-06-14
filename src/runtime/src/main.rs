@@ -2,7 +2,7 @@ mod debugger;
 mod emulator;
 mod memory;
 
-use std::{env, fs};
+use std::env;
 use raylib::init;
 use vea_shared::consts::SCREEN_SIZE;
 use crate::debugger::entry_debugger;

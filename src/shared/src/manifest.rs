@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
@@ -25,6 +26,10 @@ pub struct Settings {
 pub struct Resources {
     pub entry: String,
     pub palette: String,
+    #[serde(default)]
+    pub bg: BTreeMap<u32, String>,
+    #[serde(default)]
+    pub img: BTreeMap<u32, String>,
 }
 
 impl Manifest {
