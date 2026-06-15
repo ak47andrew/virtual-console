@@ -5,6 +5,7 @@ use vea_shared::registers::{LongRegisters, Registers};
 use unsigned_varint::decode as varint;
 use vea_shared::bytereader::ByteReader;
 use vea_shared::cartridge::Cartridge;
+use vea_shared::helper::Vec2;
 
 pub struct Memory {
     memory: Vec<u8>,
@@ -62,6 +63,43 @@ impl Memory {
     pub fn get_color(&self, index: u8) -> &[u8] {
         let index = index as usize;
         &self.palette[index * 4..=index * 4 + 3]
+    }
+
+    pub fn set_bg(&mut self, data: &[u8]) {
+        if data.len() != (TARGET_RESOLUTION.x * TARGET_RESOLUTION.y) as usize {
+            panic!("Incorrect size of the background. This should never happen, but if you see this - something went horribly wrong");
+        }
+        self.put(self.vram_start(), data);
+    }
+
+    pub fn put_sprite(&mut self, data: &[u8], pos: Vec2<u8>) {
+        if data.len() != 8 * 8 {
+            panic!("Incorrect size of the sprite. This should never happen, but if you see this - something went horribly wrong")
+        }
+        let screen_w = TARGET_RESOLUTION.x as usize;
+        let screen_h = TARGET_RESOLUTION.y as usize;
+
+        let x = pos.x as usize;
+        let y = pos.y as usize;
+
+        for sprite_y in 0..8 {
+            let screen_y = y + sprite_y;
+
+            if screen_y >= screen_h {
+                break;
+            }
+
+            let row = &data[sprite_y * 8..(sprite_y + 1) * 8];
+
+            let visible_width = (screen_w.saturating_sub(x)).min(8);
+
+            if visible_width == 0 {
+                break;
+            }
+
+            let addr = screen_y * screen_w + x;
+            self.put(addr, &row[..visible_width]);
+        }
     }
 
     pub fn vram_size() -> usize {

@@ -9,6 +9,7 @@ use raylib::math::{Rectangle, Vector2};
 use vea_shared::bytereader::ByteReader;
 use vea_shared::cartridge::Cartridge;
 use vea_shared::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
+use vea_shared::helper::Vec2;
 use crate::memory::Memory;
 use vea_shared::opcodes::Opcode;
 use vea_shared::operand_types::Operand;
@@ -39,8 +40,14 @@ impl Emulator {
         self.update_texture = false;
 
         // Input time
-        self.memory.put(self.memory.input_held(), &[self._get_held(rl)]);
-        self.memory.put(self.memory.input_pressed(), &[self._get_pressed(rl)]);
+        let curr = self._get_held(rl);
+        let prev = self.memory.peek(self.memory.input_held(), 1)[0];
+        let pressed = curr & !prev;
+        self.memory.put(self.memory.input_held(), &[curr]);
+        self.memory.put(self.memory.input_pressed(), &[pressed]);
+
+        println!("Held: {:0}", curr);
+        println!("Pressed: {:0}", pressed);
 
         texture.update_texture(&self.calculate_vram()).expect("Failed to update texture");
         true
@@ -660,6 +667,37 @@ impl Emulator {
             Opcode::RET => {
                 let addr = self.memory.pop64();
                 self.memory.set_pc(addr as usize);
+            }
+            Opcode::BG => {
+                let ind = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(val) => val as u32,
+                    Operand::LongImmediate(val) => val as u32,
+                    _ => panic!()
+                };
+
+                let data = self.cartridge.bg_data.get(&ind).unwrap();
+                self.memory.set_bg(data);
+            }
+            Opcode::IMG => {
+                let ind = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(val) => val as u32,
+                    Operand::LongImmediate(val) => val as u32,
+                    _ => panic!()
+                };
+
+                let x = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(val) => val,
+                    Operand::Register(reg) => self.memory.read_reg(reg),
+                    _ => panic!()
+                };
+                let y = match Operand::from_bytes(&mut self.memory) {
+                    Operand::Immediate(val) => val,
+                    Operand::Register(reg) => self.memory.read_reg(reg),
+                    _ => panic!()
+                };
+
+                let data = self.cartridge.sprite_data.get(&ind).unwrap();
+                self.memory.put_sprite(data, Vec2::new(x, y));
             }
         }
     }

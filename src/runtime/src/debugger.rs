@@ -174,7 +174,7 @@ impl Debugger {
     /// Called by the emulator when it executes a Vsync opcode.
     /// Grabs toggle state → writes INPUT_HELD / INPUT_PRESSED → clears toggles.
     pub fn on_vsync(&mut self) {
-        let prev = self.emulator.memory.peek(self.emulator.memory.input_held(), 1)[0];
+        let prev = self.emulator.memory.peek(self.emulator.memory.input_pressed(), 1)[0];
         let curr = self.input_toggles;
         let pressed = curr & !prev;
         self.emulator.memory.put(self.emulator.memory.input_held(), &[curr]);

@@ -9,3 +9,9 @@ stack_size = 1000  # Number of bytes program uses for the stack
 [resources]  # External stuff that's used by your game
 entry = "source.vea"  # Path (relative to the directory's root) of the source code. By convention this should be source.vea
 palette = "palette.pal"  # Same as above, but for your palette and convention is palette.pal
+
+[resources.bg]
+0 = "bg/bg.png"
+
+[resources.img]
+0 = "img/char.png"

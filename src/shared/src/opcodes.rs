@@ -5,7 +5,8 @@ pub enum Opcode {
     Add, Sub, Mul, Div,
     And, Or, Xor, Not, Shr, Shl,
     Jmp, Je, Jne,
-    PUSH, POP, RET, CALL
+    PUSH, POP, RET, CALL,
+    IMG, BG
 }
 
 impl Opcode {
@@ -40,6 +41,9 @@ impl Opcode {
             Opcode::POP => 0x51,
             Opcode::RET => 0x52,
             Opcode::CALL => 0x53,
+            
+            Opcode::IMG => 0x60,
+            Opcode::BG => 0x61,
         }
     }
     
@@ -69,6 +73,8 @@ impl Opcode {
             0x51 => Some(Opcode::POP),
             0x52 => Some(Opcode::RET),
             0x53 => Some(Opcode::CALL),
+            0x60 => Some(Opcode::IMG),
+            0x61 => Some(Opcode::BG),
             _ => None
         }
     }

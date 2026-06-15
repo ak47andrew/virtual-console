@@ -173,6 +173,30 @@ pub const PUSH_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     }
 });
 
+pub const BG_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate],
+            vec![LongImmediate],
+        ]
+    }
+});
+
+pub const IMG_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate, Immediate, Immediate],
+            vec![Immediate, Immediate, Register],
+            vec![Immediate, Register, Immediate],
+            vec![Immediate, Register, Register],
+            vec![LongImmediate, Immediate, Immediate],
+            vec![LongImmediate, Immediate, Register],
+            vec![LongImmediate, Register, Immediate],
+            vec![LongImmediate, Register, Register],
+        ]
+    }
+});
+
 pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
     match opcode {
         Opcode::Noop => EMPTY_SIGNATURE,
@@ -199,5 +223,7 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::POP => EMPTY_SIGNATURE,
         Opcode::RET => EMPTY_SIGNATURE,
         Opcode::CALL => JMP_SIGNATURE,
+        Opcode::BG => BG_SIGNATURE,
+        Opcode::IMG => IMG_SIGNATURE,
     }
 }

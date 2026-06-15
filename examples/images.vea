@@ -3,19 +3,19 @@ mov 0 !G1
 mov 0 !G2
 
 frame:
-; Draw
+; Draw background and image
 bg 0
 img 0 !G1 !G2
 vsync
 
 
-; Handle input. $63438 - INPUT_HELD
+; Handle input. $63438 - INPUT_PRESSED
 mov $63439 !G3
 
 check_up:
 and !G3 0b10000000
 jne !A $check_down
-sub !G2 8
+sub !G2 8  ; Here and below 8 is the size of the sprite so we're basically moving in a grid
 mov !A !G2
 
 check_down:

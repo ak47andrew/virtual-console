@@ -107,6 +107,9 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, CompilationError> {
         "pop" => Ok(Opcode::POP),
         "ret" => Ok(Opcode::RET),
         "call" => Ok(Opcode::CALL),
+        
+        "bg" => Ok(Opcode::BG),
+        "img" => Ok(Opcode::IMG),
 
         _ => Err(CompilationError::UnknownOpcode(token.to_string()))
     }
