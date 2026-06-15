@@ -45,10 +45,7 @@ impl Emulator {
         let pressed = curr & !prev;
         self.memory.put(self.memory.input_held(), &[curr]);
         self.memory.put(self.memory.input_pressed(), &[pressed]);
-
-        println!("Held: {:0}", curr);
-        println!("Pressed: {:0}", pressed);
-
+        
         texture.update_texture(&self.calculate_vram()).expect("Failed to update texture");
         true
     }

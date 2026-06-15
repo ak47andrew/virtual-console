@@ -1,6 +1,7 @@
 use std::path::Path;
 use log::{debug, error, info};
 use vea_shared::cartridge::{get_bg_path, Cartridge};
+use vea_shared::consts::TARGET_RESOLUTION;
 use vea_shared::manifest::Manifest;
 use crate::images::{encode_bg, encode_chr};
 use crate::palette::parse_palette;
@@ -19,6 +20,7 @@ pub fn entry_compiler(folder: &str) -> bool {
     info!("Parsed manifest at {}", manifest_filepath.display());
     let mut cartridge = Cartridge::new(manifest.unwrap());
     debug!("Prepared cartridge with manifest data");
+    report_addresses(&cartridge);
 
     // Step 2. Assemble entry
     let entry_path = Path::new(folder).join(cartridge.manifest.resources.entry.clone());
@@ -80,4 +82,12 @@ pub fn entry_compiler(folder: &str) -> bool {
     info!("Saved cartridge to {:?}", filename);
 
     true
+}
+
+fn report_addresses(cartridge: &Cartridge) {
+    let manifest = &cartridge.manifest;
+    let vram_size = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y;
+    let stack_start = vram_size + manifest.settings.ram_size;
+    info!("INPUT_HELD: ${}", stack_start - 2);
+    info!("INPUT_PRESSED: ${}", stack_start - 1);
 }
