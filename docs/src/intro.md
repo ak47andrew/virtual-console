@@ -1,5 +1,23 @@
 # Introduction
 
-Hello! And welcome to this documention of... "VEA Fantasy console" ig *(I'm bad at naming things, sorry ¯\\\_(ツ)_/¯)*
+Hello! And welcome to this documentation of... "VEA Fantasy console" ig... *(I'm bad at naming things, sorry ¯\\\_(ツ)_/¯)*
 
-This is in lesser sense a throughtfull documentation, but rather somewhat chaotic stream of thoughts and knownlage on how to play and write games on this fantasy console. Let me outline what
+As wikipedia says to us:
+> A fantasy video game console (or simply fantasy console) is an emulator for a fictitious video game console. It aims to create the experience of retro gaming without the need to emulate a real console, allowing the developer to freely decide what specifications their fictional hardware will have.
+
+And this one was created because I watched a bit too much 100th Coin's videos about Mario TASing and figured out that I wanted to write a NES-like game console. Add 1 month to this and you get what's laid in front of you
+
+---
+
+This is in lesser sense a thoughtful documentation, but rather somewhat chaotic stream of thoughts and knowledge on how to play and write games on this fantasy console
+
+Let me outline what this thing contains:
+- [Introduction](./intro.md) - You're currently reading this. Shocking, right?
+- [Quickstart](./quickstart.md) - Compile and run your first game
+- [Memory](./memory.md) - You're gonna move data. A LOT. So probably it's better to figure out what and where, right?
+- [Manifest](./manifest.md) - Shows the structure of the manifest file and how to properly set it up
+- [Assembler](./assembler.md) - Information about `.vea` files and assembler language this console understands
+    - [Operand types](./operands.md) - Existing operand (argument) types
+    - [Instruction description](./opcodes.md) - List of all instructions/opcodes, their signatures and examples
+- [Palette](./palette.md) - Explains what palette is, how to create and use one
+- [Images](./images.md) - Explains how to make images to make compiler shut up

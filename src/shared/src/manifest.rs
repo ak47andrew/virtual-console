@@ -12,7 +12,7 @@ pub struct Manifest {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Metadata {
-    pub name: String,
+    pub name: Option<String>,
     pub version: Option<String>,
 }
 

@@ -129,6 +129,12 @@ impl Emulator {
                     (Operand::Address(addr), Operand::LongRegister(reg)) => {
                         self.memory.write_reg_long(reg, u64::from_be_bytes((&self.memory.peek(addr as usize, 8)[..8]).try_into().unwrap()));
                     }
+                    (Operand::IndirectAddress(reg1), Operand::Register(reg2)) => {
+                        self.memory.write_reg(reg2, self.memory.peek(self.memory.read_reg_long(reg1) as usize, 1)[0])
+                    }
+                    (Operand::IndirectAddress(reg1), Operand::LongRegister(reg2)) => {
+                        self.memory.write_reg_long(reg2, u64::from_be_bytes((&self.memory.peek(self.memory.read_reg_long(reg1) as usize, 8)[..8]).try_into().unwrap()));
+                    }
                     (Operand::Register(reg1), Operand::Register(reg2)) => {
                         self.memory.write_reg(reg2, self.memory.read_reg(reg1))
                     }
@@ -173,6 +179,9 @@ impl Emulator {
                 match (src, dest) {
                     (Operand::Address(addr), Operand::LongRegister(reg)) => {
                         self.memory.write_reg_long(reg, self.memory.peek(addr as usize, 1)[0] as u64)
+                    }
+                    (Operand::IndirectAddress(reg1), Operand::LongRegister(reg2)) => {
+                        self.memory.write_reg_long(reg2, self.memory.peek(self.memory.read_reg_long(reg1) as usize, 1)[0] as u64)
                     }
                     (Operand::Immediate(val), Operand::LongRegister(reg)) => {
                         self.memory.write_reg_long(reg, val as u64)

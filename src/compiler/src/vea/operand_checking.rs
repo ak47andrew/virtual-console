@@ -30,6 +30,8 @@ pub const MOV_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
 
             vec![Address, Register],
             vec![Address, LongRegister],
+            vec![IndirectAddress, Register],
+            vec![IndirectAddress, LongRegister],
             vec![Register, Register],
             vec![Immediate, Register],
             vec![LongImmediate, LongRegister],
@@ -53,6 +55,7 @@ pub const EXT_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     InstructionSignature {
         operands_variations: vec![
             vec![Address, LongRegister],
+            vec![IndirectAddress, LongRegister],
             vec![Immediate, LongRegister],
             vec![Register, LongRegister]
         ]

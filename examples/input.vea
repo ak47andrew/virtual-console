@@ -6,7 +6,6 @@ frame:
 ; Draw the guy
 ; Clear last place, draw on the new one and save the pos
 mov 1 [?GP2]
-vsync
 mov !G4 [?GP1]
 vsync
 mov ?GP1 ?GP2
