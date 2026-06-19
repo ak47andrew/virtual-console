@@ -535,7 +535,7 @@ pub fn entry_debugger(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
         let mouse = rl.get_mouse_position();
 
         if debugger.update(&mut rl) {
-            debugger.emulator.step()
+            debugger.emulator.step();
         }
 
         if debugger.emulator.new_frame(&mut texture, &rl) && debugger.paused {

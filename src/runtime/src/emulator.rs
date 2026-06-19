@@ -8,7 +8,7 @@ use raylib::drawing::RaylibDraw;
 use raylib::math::{Rectangle, Vector2};
 use vea_shared::bytereader::ByteReader;
 use vea_shared::cartridge::Cartridge;
-use vea_shared::consts::{SCREEN_SIZE, TARGET_RESOLUTION};
+use vea_shared::consts::{MAX_INSTRUCTIONS_RAN_CHUNK, SCREEN_SIZE, TARGET_RESOLUTION};
 use vea_shared::helper::Vec2;
 use crate::memory::Memory;
 use vea_shared::opcodes::Opcode;
@@ -78,7 +78,7 @@ impl Emulator {
         out
     }
 
-    pub fn step(&mut self) {
+    pub fn step(&mut self) -> bool {
         let opcode = Opcode::from_bytecode(self.memory.read_u8()).unwrap();
         match opcode {
             Opcode::Noop => {} // Noop
@@ -706,6 +706,10 @@ impl Emulator {
                 self.memory.put_sprite(data, Vec2::new(x, y));
             }
         }
+        match opcode {
+            Opcode::Vsync => true,
+            _ => false
+        }
     }
 }
 
@@ -718,10 +722,18 @@ pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
              Color::BLACK
          )
     ).unwrap();
+    rl.set_target_fps(60);
     texture.set_texture_filter(&thread, TextureFilter::TEXTURE_FILTER_POINT);
+    let mut instructions_ran_chunk;
 
     while !rl.window_should_close() {
-        emulator.step();
+        instructions_ran_chunk = 0;
+        while !emulator.step() {
+            instructions_ran_chunk += 1;
+            if instructions_ran_chunk >= MAX_INSTRUCTIONS_RAN_CHUNK {
+                println!("[!] No VSYNC met in {} instructions. Inserting vsync just so it doesn't blow up", MAX_INSTRUCTIONS_RAN_CHUNK)
+            }
+        }
         emulator.new_frame(&mut texture, &mut rl);
 
         let mut d = rl.begin_drawing(&thread);
