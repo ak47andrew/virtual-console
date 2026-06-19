@@ -731,7 +731,8 @@ pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
         while !emulator.step() {
             instructions_ran_chunk += 1;
             if instructions_ran_chunk >= MAX_INSTRUCTIONS_RAN_CHUNK {
-                println!("[!] No VSYNC met in {} instructions. Inserting vsync just so it doesn't blow up", MAX_INSTRUCTIONS_RAN_CHUNK)
+                println!("[!] No VSYNC met in {} instructions. Inserting vsync just so it doesn't blow up", MAX_INSTRUCTIONS_RAN_CHUNK);
+                break;
             }
         }
         emulator.new_frame(&mut texture, &mut rl);

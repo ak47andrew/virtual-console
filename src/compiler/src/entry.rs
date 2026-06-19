@@ -88,6 +88,12 @@ fn report_addresses(cartridge: &Cartridge) {
     let manifest = &cartridge.manifest;
     let vram_size = TARGET_RESOLUTION.x * TARGET_RESOLUTION.y;
     let stack_start = vram_size + manifest.settings.ram_size;
+    info!("=== SECTIONS ===");
+    info!("VRAM: 0-{}", vram_size);
+    info!("RAM: {}-{}", vram_size + 1, vram_size + 1 + manifest.settings.ram_size);
+    info!("STACK: {}-{}", stack_start, stack_start + manifest.settings.stack_size);
+    info!("ROM: {}-...", stack_start + manifest.settings.stack_size + 1);
+    info!("=== SPECIAL ADDRESSES ===");
     info!("INPUT_HELD: ${}", stack_start - 2);
     info!("INPUT_PRESSED: ${}", stack_start - 1);
 }

@@ -497,10 +497,10 @@ impl Debugger {
 
 fn reg_name_8(reg: &Registers) -> &'static str {
     match reg {
-        Registers::A => "A",
-        Registers::X => "X",
-        Registers::Y => "Y",
-        Registers::Z => "Z",
+        Registers::A  =>  "A",
+        Registers::X  =>  "X",
+        Registers::Y  =>  "Y",
+        Registers::Z  =>  "Z",
         Registers::G1 => "G1",
         Registers::G2 => "G2",
         Registers::G3 => "G3",
@@ -512,7 +512,7 @@ fn reg_name_8(reg: &Registers) -> &'static str {
 fn reg_name_64(reg: &LongRegisters) -> &'static str {
     match reg {
         LongRegisters::PC  => "PC ",
-        LongRegisters::SP => "SP ",
+        LongRegisters::SP  => "SP ",
         LongRegisters::LL1 => "LL1",
         LongRegisters::LL2 => "LL2",
         LongRegisters::GP1 => "GP1",
