@@ -48,4 +48,23 @@ impl Manifest {
     pub fn to_string(&self) -> String {
         toml::to_string_pretty(self).unwrap()
     }
+
+    pub fn default(name: String) -> Manifest {
+        Manifest {
+            metadata: Some(Metadata {
+                name: Some(name),
+                version: Some("0.1".to_string())
+            }),
+            settings: Settings {
+                ram_size: 5000,
+                stack_size: 5000,
+            },
+            resources: Resources {
+                entry: "source.vea".to_string(),
+                palette: "palette.pal".to_string(),
+                bg: BTreeMap::new(),
+                img: BTreeMap::new()
+            }
+        }
+    }
 }

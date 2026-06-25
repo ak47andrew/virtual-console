@@ -46,11 +46,11 @@ impl Emulator {
         self.memory.put(self.memory.input_held(), &[curr]);
         self.memory.put(self.memory.input_pressed(), &[pressed]);
         
-        texture.update_texture(&self.calculate_vram()).expect("Failed to update texture");
+        texture.update_texture(&self.update_raylib_texture()).expect("Failed to update texture");
         true
     }
 
-    fn calculate_vram(&self) -> Vec<u8> {
+    fn update_raylib_texture(&self) -> Vec<u8> {
         // Update VRAM
         let pixels = self.memory.vram();
         let mut out = Vec::new();
@@ -261,6 +261,11 @@ impl Emulator {
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                         self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
                     }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let (result, overflow) = self.memory.read_reg_long(reg).overflowing_add(addr);
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                        self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
+                    }
                     (_, _) => {panic!()}
                 }
             }
@@ -309,6 +314,11 @@ impl Emulator {
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                         self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
                     }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let (result, overflow) = self.memory.read_reg_long(reg).overflowing_sub(addr);
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                        self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
+                    }
                     (_, _) => {panic!()}
                 }
             }
@@ -344,6 +354,11 @@ impl Emulator {
                     }
                     (Operand::LongRegister(reg), Operand::LongImmediate(val)) | (Operand::LongImmediate(val), Operand::LongRegister(reg)) => {
                         let (result, overflow) = self.memory.read_reg_long(reg).overflowing_mul(val);
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                        self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
+                    }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let (result, overflow) = self.memory.read_reg_long(reg).overflowing_mul(addr);
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                         self.memory.write_reg(Registers::Z, if overflow { 1 } else { 0 });
                     }
@@ -389,6 +404,12 @@ impl Emulator {
                         self.memory.write_reg_long(LongRegisters::LL1, div);
                         self.memory.write_reg_long(LongRegisters::LL2, modulo);
                     }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let (val1, val2) = (self.memory.read_reg_long(reg), addr);
+                        let (div, modulo) = (val1 / val2, val1 % val2);
+                        self.memory.write_reg_long(LongRegisters::LL1, div);
+                        self.memory.write_reg_long(LongRegisters::LL2, modulo);
+                    }
                     (_, _) => {panic!()}
                 }
             }
@@ -419,6 +440,10 @@ impl Emulator {
                     }
                     (Operand::LongRegister(reg), Operand::LongImmediate(val)) | (Operand::LongImmediate(val), Operand::LongRegister(reg)) => {
                         let result = self.memory.read_reg_long(reg) & val;
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                    }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let result = self.memory.read_reg_long(reg) & addr;
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                     }
                     (_, _) => {panic!()}
@@ -453,6 +478,10 @@ impl Emulator {
                         let result = self.memory.read_reg_long(reg) | val;
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                     }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let result = self.memory.read_reg_long(reg) | addr;
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                    }
                     (_, _) => {panic!()}
                 }
             }
@@ -483,6 +512,10 @@ impl Emulator {
                     }
                     (Operand::LongRegister(reg), Operand::LongImmediate(val)) | (Operand::LongImmediate(val), Operand::LongRegister(reg)) => {
                         let result = self.memory.read_reg_long(reg) ^ val;
+                        self.memory.write_reg_long(LongRegisters::LL1, result);
+                    }
+                    (Operand::LongRegister(reg), Operand::Address(addr)) => {
+                        let result = self.memory.read_reg_long(reg) ^ addr;
                         self.memory.write_reg_long(LongRegisters::LL1, result);
                     }
                     (_, _) => {panic!()}
@@ -616,7 +649,7 @@ impl Emulator {
                     _ => panic!()
                 }
             },
-            Opcode::Je => {
+            Opcode::Jnz => {
                 // Man I love how this is implemented. It's the most cursed while still readable piece of code I've ever seen
                 if match Operand::from_bytes(&mut self.memory) {
                     Operand::Register(reg) => {self.memory.read_reg(reg) != 0}
@@ -632,7 +665,7 @@ impl Emulator {
                     let _ = Operand::from_bytes(&mut self.memory); // Just so I can keep cool cursed `if match` 😎
                 }
             }
-            Opcode::Jne => {
+            Opcode::Jz => {
                 if match Operand::from_bytes(&mut self.memory) {
                     Operand::Register(reg) => {self.memory.read_reg(reg) == 0}
                     Operand::LongRegister(reg) => {self.memory.read_reg_long(reg) == 0}
@@ -678,6 +711,8 @@ impl Emulator {
                 let ind = match Operand::from_bytes(&mut self.memory) {
                     Operand::Immediate(val) => val as u32,
                     Operand::LongImmediate(val) => val as u32,
+                    Operand::Register(reg) => self.memory.read_reg(reg) as u32,
+                    Operand::LongRegister(reg) => self.memory.read_reg_long(reg) as u32,
                     _ => panic!()
                 };
 
@@ -688,6 +723,8 @@ impl Emulator {
                 let ind = match Operand::from_bytes(&mut self.memory) {
                     Operand::Immediate(val) => val as u32,
                     Operand::LongImmediate(val) => val as u32,
+                    Operand::Register(reg) => self.memory.read_reg(reg) as u32,
+                    Operand::LongRegister(reg) => self.memory.read_reg_long(reg) as u32,
                     _ => panic!()
                 };
 
@@ -704,6 +741,50 @@ impl Emulator {
 
                 let data = self.cartridge.sprite_data.get(&ind).unwrap();
                 self.memory.put_sprite(data, Vec2::new(x, y));
+            }
+            Opcode::DBG => {
+                //                     (Operand::Address(addr), Operand::Register(reg)) => {
+                //                         self.memory.write_reg(reg, self.memory.peek(addr as usize, 1)[0])
+                //                     }
+                //                     (Operand::Address(addr), Operand::LongRegister(reg)) => {
+                //                         self.memory.write_reg_long(reg, u64::from_be_bytes((&self.memory.peek(addr as usize, 8)[..8]).try_into().unwrap()));
+                //                     }
+
+                match Operand::from_bytes(&mut self.memory) {
+                    Operand::Address(addr) => {
+                        println!("[DEBUG] Address: ${}; 8-bit value: {}; 64-bit value: {}",
+                                 addr,
+                                 self.memory.peek(addr as usize, 1)[0],
+                                 u64::from_be_bytes((&self.memory.peek(addr as usize, 8)[..8]).try_into().unwrap()))
+                    }
+                    Operand::Immediate(imm) => {
+                        println!("[DEBUG] {}", imm);
+                    }
+                    Operand::LongImmediate(imm) => {
+                        println!("[DEBUG] {}", imm);
+                    }
+                    Operand::LongerImmediate(imm) => {
+                        println!("[DEBUG] {}", imm);
+                    }
+                    Operand::Register(reg) => {
+                        println!("[DEBUG] REG({:?}) = {}", reg, self.memory.read_reg(reg));
+                    }
+                    Operand::LongRegister(reg) => {
+                        println!("[DEBUG] LONG_REG({:?}) = {}", reg, self.memory.read_reg_long(reg));
+                    }
+                    Operand::IndirectAddress(reg) => {
+                        let addr = self.memory.read_reg_long(reg) as usize;
+                        println!("[DEBUG] LONG_REG({:?}) = Address: ${}; 8-bit value: {}; 64-bit value: {}",
+                                 reg,
+                                 addr,
+                                 self.memory.peek(addr as usize, 1)[0],
+                                 u64::from_be_bytes((&self.memory.peek(addr as usize, 8)[..8]).try_into().unwrap()))
+                    }
+                }
+            }
+            Opcode::DBGSEC => {
+                let Operand::Immediate(value) = Operand::from_bytes(&mut self.memory) else { panic!("Corrupted program ig...") };
+                println!("{}", "=".repeat(value as usize));
             }
         }
         match opcode {
@@ -739,6 +820,7 @@ pub fn entry_emulator(mut rl: RaylibHandle, mut thread: RaylibThread, mut emulat
 
         let mut d = rl.begin_drawing(&thread);
 
+        d.clear_background(Color::WHITE);
         d.draw_texture_pro(
             &texture,
             Rectangle::new(

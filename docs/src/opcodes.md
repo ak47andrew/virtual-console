@@ -491,6 +491,8 @@ Fills up the VRAM with specified background. Number corresponding to the one in 
 **Operands**
 - `Immediate`
 - `LongImmediate`
+- `Register`
+- `LongRegister`
 
 **Example:**
 ```
@@ -505,7 +507,7 @@ vsync
 Blits sprite onto the screen at specified coordinates. Number corresponding to the one in Manifest. Coordinates are 0-indexed, counting from the top left corner. Check [Images](./images.md) for more info
 
 **Operands**
-- `Immediate/LongImmediate`, `Immediate/Register`, `Immediate/Register`
+- `Immediate/LongImmediate/Register/LongRegister`, `Immediate/Register`, `Immediate/Register`
 
 **Example:**
 ```

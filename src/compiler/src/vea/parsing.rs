@@ -100,8 +100,8 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, CompilationError> {
         "shr" => Ok(Opcode::Shr),
 
         "jmp" => Ok(Opcode::Jmp),
-        "je" => Ok(Opcode::Je),
-        "jne" => Ok(Opcode::Jne),
+        "jnz" => Ok(Opcode::Jnz),
+        "jz" => Ok(Opcode::Jz),
 
         "push" => Ok(Opcode::PUSH),
         "pop" => Ok(Opcode::POP),
@@ -110,6 +110,9 @@ pub fn parse_opcode(token: &str) -> Result<Opcode, CompilationError> {
         
         "bg" => Ok(Opcode::BG),
         "img" => Ok(Opcode::IMG),
+        
+        "dbg" => Ok(Opcode::DBG),
+        "dbgsec" => Ok(Opcode::DBGSEC),
 
         _ => Err(CompilationError::UnknownOpcode(token.to_string()))
     }

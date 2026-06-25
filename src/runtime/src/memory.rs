@@ -98,7 +98,10 @@ impl Memory {
             }
 
             let addr = screen_y * screen_w + x;
-            self.put(addr, &row[..visible_width]);
+            for rel in 0..visible_width {
+                if row[rel] == 0 { continue; }
+                self.put(addr + rel, &[row[rel]]);
+            }
         }
     }
 

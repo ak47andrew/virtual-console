@@ -1,12 +1,13 @@
 #[derive(Copy, Clone, Debug)]
-pub enum Opcode {
+pub enum Opcode {  // TODO: update examples
     Noop, Hlt, Vsync,
     Mov, Trunc, Ext, Copy,
     Add, Sub, Mul, Div,
     And, Or, Xor, Not, Shr, Shl,
-    Jmp, Je, Jne,
+    Jmp, Jnz, Jz,
     PUSH, POP, RET, CALL,
-    IMG, BG
+    IMG, BG,
+    DBG, DBGSEC  // TODO: add to docs
 }
 
 impl Opcode {
@@ -34,8 +35,8 @@ impl Opcode {
             Opcode::Shr => 0x35,
 
             Opcode::Jmp => 0x40,
-            Opcode::Je => 0x41,
-            Opcode::Jne => 0x42,
+            Opcode::Jnz => 0x41,
+            Opcode::Jz => 0x42,
 
             Opcode::PUSH => 0x50,
             Opcode::POP => 0x51,
@@ -44,6 +45,9 @@ impl Opcode {
             
             Opcode::IMG => 0x60,
             Opcode::BG => 0x61,
+
+            Opcode::DBG => 0x70,
+            Opcode::DBGSEC => 0x71,
         }
     }
     
@@ -67,14 +71,16 @@ impl Opcode {
             0x34 => Some(Opcode::Shl),
             0x35 => Some(Opcode::Shr),
             0x40 => Some(Opcode::Jmp),
-            0x41 => Some(Opcode::Je),
-            0x42 => Some(Opcode::Jne),
+            0x41 => Some(Opcode::Jnz),
+            0x42 => Some(Opcode::Jz),
             0x50 => Some(Opcode::PUSH),
             0x51 => Some(Opcode::POP),
             0x52 => Some(Opcode::RET),
             0x53 => Some(Opcode::CALL),
             0x60 => Some(Opcode::IMG),
             0x61 => Some(Opcode::BG),
+            0x70 => Some(Opcode::DBG),
+            0x71 => Some(Opcode::DBGSEC),
             _ => None
         }
     }

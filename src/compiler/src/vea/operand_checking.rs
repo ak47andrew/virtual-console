@@ -103,6 +103,7 @@ pub const BINARY_MATH_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![Register, Immediate],
             vec![LongImmediate, LongRegister],
             vec![LongRegister, LongImmediate],
+            vec![LongRegister, Address],  // TODO: update docs
         ]
     }
 });
@@ -196,6 +197,36 @@ pub const IMG_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
             vec![LongImmediate, Immediate, Register],
             vec![LongImmediate, Register, Immediate],
             vec![LongImmediate, Register, Register],
+            vec![Register, Immediate, Immediate],
+            vec![Register, Immediate, Register],
+            vec![Register, Register, Immediate],
+            vec![Register, Register, Register],
+            vec![LongRegister, Immediate, Immediate],
+            vec![LongRegister, Immediate, Register],
+            vec![LongRegister, Register, Immediate],
+            vec![LongRegister, Register, Register],
+        ]
+    }
+});
+
+pub const DBG_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Address],
+            vec![Immediate],
+            vec![LongImmediate],
+            vec![LongerImmediate],
+            vec![Register],
+            vec![LongRegister],
+            vec![IndirectAddress]
+        ]
+    }
+});
+
+pub const DBGSEC_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![Immediate],
         ]
     }
 });
@@ -220,13 +251,15 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::Shr => SHIFTS_SIGNATURE,
         Opcode::Shl => SHIFTS_SIGNATURE,
         Opcode::Jmp => JMP_SIGNATURE,
-        Opcode::Je => CONDITIONAL_JUMP_SIGNATURE,
-        Opcode::Jne => CONDITIONAL_JUMP_SIGNATURE,
+        Opcode::Jnz => CONDITIONAL_JUMP_SIGNATURE,
+        Opcode::Jz => CONDITIONAL_JUMP_SIGNATURE,
         Opcode::PUSH => PUSH_SIGNATURE,
         Opcode::POP => EMPTY_SIGNATURE,
         Opcode::RET => EMPTY_SIGNATURE,
         Opcode::CALL => JMP_SIGNATURE,
         Opcode::BG => BG_SIGNATURE,
         Opcode::IMG => IMG_SIGNATURE,
+        Opcode::DBG => DBG_SIGNATURE,
+        Opcode::DBGSEC => DBGSEC_SIGNATURE,
     }
 }

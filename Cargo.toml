@@ -3,5 +3,5 @@ members = [
     "src/shared",
     "src/compiler",
     "src/runtime"
-]
+, "src/launcher"]
 resolver = "3"

@@ -56,7 +56,7 @@ impl Cartridge {
         }
 
         let mut sprite_data: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
-        for (ind, _) in &manifest.resources.bg {
+        for (ind, _) in &manifest.resources.img {
             sprite_data.insert(*ind, load_file(&mut archive, get_spr_path(&ind).as_str()));
         }
 

@@ -44,14 +44,14 @@ const C_TEXT_BG: Color  = Color { r: 80,   g: 80,   b: 80,   a: 255 };
 // ── Input bitmask ─────────────────────────────────────────────────────────────
 
 const TOGGLE_DEFS: [(&str, u8); 8] = [
-    ("UP",    1 << 0),
-    ("DOWN",  1 << 1),
-    ("LEFT",  1 << 2),
-    ("RIGHT", 1 << 3),
-    ("Z",     1 << 4),
-    ("X",     1 << 5),
-    ("C",     1 << 6),
-    ("SPACE",   1 << 7),
+    ("UP",    1 << 7),
+    ("DOWN",  1 << 6),
+    ("LEFT",  1 << 5),
+    ("RIGHT", 1 << 4),
+    ("Z",     1 << 3),
+    ("X",     1 << 2),
+    ("C",     1 << 1),
+    ("SPACE",   1 << 0),
 ];
 
 // Toggle button geometry (relative to registers panel origin)
