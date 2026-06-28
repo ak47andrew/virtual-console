@@ -1,3 +1,4 @@
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 mod debugger;
 mod emulator;
 mod memory;
@@ -16,7 +17,7 @@ fn main() {
     #[allow(unused_mut)]
     let (mut rl, mut thread) = init()
         .size(SCREEN_SIZE.x as i32, SCREEN_SIZE.y as i32)
-        .title("Rust Raylib")
+        .title("VEA Runner")
         .build();
 
     let is_debug = if args.len() > 0 && args[0] == "debug" {

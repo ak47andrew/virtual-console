@@ -68,3 +68,12 @@ impl Manifest {
         }
     }
 }
+
+impl Default for Metadata {
+    fn default() -> Self {
+        Metadata {
+            name: None,
+            version: None,
+        }
+    }
+}

@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 raylib = { version = "6.0.0", features = [] }
 vea_shared = { path = "../shared" }
+notify-rust = "4"
