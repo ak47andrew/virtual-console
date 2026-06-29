@@ -13,7 +13,6 @@ This is in lesser sense a thoughtful documentation, but rather somewhat chaotic 
 
 Let me outline what this thing contains:
 - [Introduction](./intro.md) - You're currently reading this. Shocking, right?
-- [Quickstart](./quickstart.md) - Compile and run your first game
 - [Memory](./memory.md) - You're gonna move data. A LOT. So probably it's better to figure out what and where, right?
 - [Manifest](./manifest.md) - Shows the structure of the manifest file and how to properly set it up
 - [Assembler](./assembler.md) - Information about `.vea` files and assembler language this console understands
@@ -21,3 +20,6 @@ Let me outline what this thing contains:
     - [Instruction description](./opcodes.md) - List of all instructions/opcodes, their signatures and examples
 - [Palette](./palette.md) - Explains what palette is, how to create and use one
 - [Images](./images.md) - Explains how to make images to make compiler shut up
+
+---
+

@@ -15,25 +15,25 @@ mov $63438 !G3
 
 check_up:
 and !G3 0b10000000
-jne !A $check_down
+jz !A $check_down
 sub ?GP1 &256
 mov ?LL1 ?GP1
 
 check_down:
 and !G3 0b01000000
-jne !A $check_right
+jz !A $check_right
 add ?GP1 &256
 mov ?LL1 ?GP1
 
 check_right:
 and !G3 0b00010000
-jne !A $check_left
+jz !A $check_left
 add ?GP1 &1
 mov ?LL1 ?GP1
 
 check_left:
 and !G3 0b00100000
-jne !A $frame
+jz !A $frame
 sub ?GP1 &1
 mov ?LL1 ?GP1
 

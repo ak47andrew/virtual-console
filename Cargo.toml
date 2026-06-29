@@ -2,6 +2,8 @@
 members = [
     "src/shared",
     "src/compiler",
-    "src/runtime"
-, "src/launcher"]
+    "src/runtime",
+    "src/launcher",
+    "src/flowchart-gen"
+]
 resolver = "3"

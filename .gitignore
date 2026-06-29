@@ -10,3 +10,6 @@ perf.data.old
 source/
 source.vec
 dist/
+
+*graph.png
+*.dot

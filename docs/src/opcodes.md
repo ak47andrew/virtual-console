@@ -1,6 +1,8 @@
 # Instruction description
 
-## Noop
+## Miscellaneous
+
+### Noop
 
 Instruction that does nothing. Useful for padding or removing code at runtime
 
@@ -12,7 +14,7 @@ Instruction that does nothing. Useful for padding or removing code at runtime
 noop
 ```
 
-## Hlt
+### Hlt
 
 Stops the execution forever. Less useful for real games, more useful for simulations and tests
 
@@ -31,25 +33,9 @@ hlt  ; ...and then stop to look at it
 
 > In real games you might want to have an endless loop with vsync and checking user input for, let's say, restart
 
-## Vsync
+## Data transfer
 
-Tell the console to "swap the banks" and update input. After this command is reached, console will display update screen texture from VRAM (see [Memory](./memory.md)) and place pressed and held buttons at the last two bytes of the RAM (compiler reports this addresses)
-
-**Operands:**
-- `none`
-
-**Example:**
-```armasm
-; Fill up the VRAM
-mov 4 $0
-mov 2 $1
-mov 3 $2
-; Show it on the screen
-vsync
-```
-> Note: after the vsync, VRAM isn't cleared and stays as it was beforehand
-
-## Mov
+### Mov
 
 Move data between same-size containers. First operand is the source, second - the destination. If you need transfer something between different places - you probably 
 
@@ -80,7 +66,7 @@ mov ?LL1 $1
 mov $2 !G1
 ```
 
-## Trunc
+### Trunc
 
 Move data from higher-size container to the lower-size. Only last bytes is gonna be save, everything else is gonna be **trunc**ated. Usually used to move 64-bit register to 8-bit one or if you don't want to truncate your immediates for whatever reason
 
@@ -95,7 +81,7 @@ Move data from higher-size container to the lower-size. Only last bytes is gonna
 trunc ?LL1 !A
 ```
 
-## Ext
+### Ext
 Move data from lower-size container to the higher-size one. The first 7 bits is zeroed out. This can also be used to transfer one byte from main memory to LongRegister instead of the whole 8 when using `mov`
 
 **Operands:**
@@ -111,7 +97,7 @@ mov $0 ?LL1  ; whole 0-7 range
 ext !A ?LL2
 ```
 
-## Copy
+### Copy
 
 Your primary way to copy huge chunks of data between different addresses in memory. First operand tells how many bytes to copy, second is the source address, third - destination address
 
@@ -122,7 +108,19 @@ Your primary way to copy huge chunks of data between different addresses in memo
 
 *Check* [*examples/copy.vea*](https://github.com/ak47andrew/virtual-console/blob/main/examples/copy.vea)
 
-## Add
+### Arithmetic and binary
+
+> NOTE: The `LongRegister`, `Address` combo requires additional explanation. Instead of using data stored in specified address it takes the address itself add does an operation with it and LongRegister. This is specifically added to allow techniques like jump tables to work and reasonably only use it in `add` instruction and with a label like this:
+```armasm
+move_forward:
+    ext $61443 ?LL1
+    div ?LL1 &4
+    mul ?LL1 &10
+    add ?LL1 $move_table
+    jmp [?LL1]
+```
+
+### Add
 
 Adds two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if overflow occurred then `!Z` is set to `1`, else - to `0`
 
@@ -144,7 +142,7 @@ add ?LL1 ?LL2
 add !A !X
 ```
 
-## Sub
+### Sub
 
 Subtract two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if underflow occurred then `!Z` is set to `1`, else - to `0`
 
@@ -166,7 +164,7 @@ sub ?LL1 ?LL2
 sub !A !X
 ```
 
-## Mul
+### Mul
 
 Multiply two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if underflow occurred then `!Z` is set to `1`, else - to `0`
 
@@ -188,7 +186,7 @@ mul ?LL1 ?LL2
 mul !A !X
 ```
 
-## Div
+### Div
 
 Divide two numbers of the same size and stores result in one register and remainder in another. For 8-bit values it's `!A` and `!X`, for 640-bit it's `?LL1` and `?LL2`
 
@@ -210,7 +208,7 @@ div ?LL1 ?LL2
 div !A !X
 ```
 
-## And
+### And
 
 Performs `binary ADD (&)` operation on two same-size numbers. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -232,7 +230,7 @@ and ?LL1 ?LL2
 and !A !X
 ```
 
-## Or
+### Or
 
 Performs `binary OR (|)` operation on two same-size numbers. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -254,7 +252,7 @@ or ?LL1 ?LL2
 or !A !X
 ```
 
-## Xor
+### Xor
 
 Performs `binary XOR (^)` operation on two same-size numbers. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -276,7 +274,7 @@ xor ?LL1 ?LL2
 xor !A !X
 ```
 
-## Not
+### Not
 
 Performs `binary NOT (!)` operation on the number. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -294,7 +292,7 @@ not !A
 not ?LL1
 ```
 
-## Shr
+### Shr
 
 Performs `binary right shift (>>)` operation. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -320,7 +318,7 @@ shr !A !X
 shr ?LL1 !A
 ```
 
-## Shl
+### Shl
 
 Performs `binary left shift (<<)` operation. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
 
@@ -346,7 +344,9 @@ shl !A !X
 shl ?LL1 !A
 ```
 
-## Jmp
+## Execution Control Flow & Branching
+
+### Jmp
 
 Jumps (moves PC) to the specified label or address, allowing to create infinite loops
 
@@ -362,7 +362,7 @@ loop:
 jmp $loop  ; label is gonna be resolved to the address at compile time
 ```
 
-## Je
+### Jnz
 
 Jumps (moves PC) to the specified label or address only if specified register **NOT equal to zero**, allowing to create branching and loops
 
@@ -374,9 +374,9 @@ Jumps (moves PC) to the specified label or address only if specified register **
 mov !G1 30
 
 ; Check against 30
-sub G1 30
+sub !G1 30
 ; If it's not zero - then the initial value isn't 30, meaning we should jump to `else` block
-jmp $else_block
+jnz !A $else_block
 
 ; <Do something, G1 = 30>
 
@@ -399,7 +399,7 @@ if (G1 == 30) {
 }
 ```
 
-## Jne
+## Jz
 
 Jumps (moves PC) to the specified label or address only if specified register **equal to zero**, allowing to create branching and loops
 
@@ -412,7 +412,7 @@ mov !G1 0  ; setup the counter
 loop:
 ; Check if !G1 is equal to target value (let's say 10)
 sub !G1 10
-jne !A $loop_end
+jz !A $loop_end
 
 ; <Do something in a loop>
 
@@ -430,7 +430,29 @@ for (int G1 = 0; G1 != 10; G1++) {
 }
 ```
 
-## Push
+### Call
+
+Pushes current address onto the stack and jumps to the specified location. This is useful when creating functions and, especially, recursive functions
+
+**Operands**
+- `Address`
+- `IndirectAddress`
+
+**Example:**
+*Check the example at* [Memory](./memory.md) *in Stack section*
+
+### Ret
+Pops value from the stack and jumps to it, continuing execution after `call`
+
+**Operands**
+- `none`
+
+**Example:**
+*Check the example at* [Memory](./memory.md) *in Stack section*
+
+## Stack manipulation
+
+### Push
 
 Pushes 8-bit value onto the stack (see [Memory](./memory.md))
 
@@ -446,7 +468,7 @@ pop
 pop
 ```
 
-## Pop
+### Pop
 
 Pop 8-bit value off of the stack and stores it in the `!A` register (see [Memory](./memory.md))
 
@@ -464,27 +486,11 @@ pop  ; Previous state of the !A is back in the !A
 
 > There's no way to push or pop 64-bit values from the stack, tho you can do that with loops and binary shifts if you need to and wrap it into a function
 
-## Call
+## Rendering
 
-Pushes current address onto the stack and jumps to the specified location. This is useful when creating functions and, especially, recursive functions
+> Check [Images](./images.md)
 
-**Operands**
-- `Address`
-- `IndirectAddress`
-
-**Example:**
-*Check the example at* [Memory](./memory.md) *in Stack section*
-
-## Ret
-Pops value from the stack and jumps to it, continuing execution after `call`
-
-**Operands**
-- `none`
-
-**Example:**
-*Check the example at* [Memory](./memory.md) *in Stack section*
-
-## BG
+### BG
 
 Fills up the VRAM with specified background. Number corresponding to the one in Manifest. Check [Images](./images.md) for more info
 
@@ -502,7 +508,7 @@ bg &256  ; In case you have more then 255 backgrounds
 vsync
 ```
 
-## IMG
+### IMG
 
 Blits sprite onto the screen at specified coordinates. Number corresponding to the one in Manifest. Coordinates are 0-indexed, counting from the top left corner. Check [Images](./images.md) for more info
 
@@ -515,4 +521,58 @@ img 0 30 100
 vsync
 img &256 !G1 !G2
 vsync
+```
+
+### Vsync
+
+Tell the console to "swap the banks" and update input. After this command is reached, console will display update screen texture from VRAM (see [Memory](./memory.md)) and place pressed and held buttons at the last two bytes of the RAM (compiler reports this addresses)
+
+**Operands:**
+- `none`
+
+**Example:**
+```armasm
+; Fill up the VRAM
+mov 4 $0
+mov 2 $1
+mov 3 $2
+; Show it on the screen
+vsync
+```
+> Note: after the vsync, VRAM isn't cleared and stays as it was beforehand
+
+## Debug
+
+### DBG
+
+Outputs all information about specific object into terminal output for debug purposes. Not recommended to use in release builds
+
+**Operands:**
+- `<Any (single operand)>`
+
+**Example:**
+```armasm
+dbg $0  ; [DEBUG] Address: $0; 8-bit value: 0; 64-bit value: 0
+dbg 100  ; [DEBUG] 100
+dbg &500  ; [DEBUG] 500
+dbg ^1000000000  ; [DEBUG] 1000000000
+dbg !G1  ; [DEBUG] REG(G1) = 0
+dbg ?PC  ; [DEBUG] LONG_REG(PC) = 71476
+dbg [?PC]  ; [DEBUG] LONG_REG(PC) = Address: $71479; 8-bit value: 1; 64-bit value: 72057594037927936
+hlt
+```
+
+### DBGSEC
+
+Outputs repeated `=` for more clear separation when debugging. Not recommended to use in release builds
+
+**Operands:**
+- `Immediate`
+
+**Example:**
+```armasm
+dbgsec 4  ; ====
+dbgsec 1  ; =
+dbgsec 20  ; ====================
+hlt
 ```
