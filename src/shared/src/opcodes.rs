@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug)]
-pub enum Opcode {  // TODO: update examples
+pub enum Opcode {
     Noop, Hlt, Vsync,
     Mov, Trunc, Ext, Copy,
     Add, Sub, Mul, Div,
@@ -7,7 +7,7 @@ pub enum Opcode {  // TODO: update examples
     Jmp, Jnz, Jz,
     PUSH, POP, RET, CALL,
     IMG, BG,
-    DBG, DBGSEC  // TODO: add to docs
+    DBG, DBGSEC
 }
 
 impl Opcode {

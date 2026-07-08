@@ -8,3 +8,4 @@
     - [Instruction description](./opcodes.md)
 - [Palette](./palette.md)
 - [Images](./images.md)
+- [Known Issues](./known_issues.md)

@@ -8,14 +8,14 @@ There's quite a few places where data is stored and read, we're gonna visit them
 
 I already said that I'm good with naming, right?
 
-So basically, it's your main memory chip, accessible with addresses (prefixed with `$` in assembly). And it's split into multiple logical parts. And since they're only logical it's easy to overflow some addresses and start writing to RAM while thinking you're still in VRAM and writing to ROM at any point would probably cause console to execute inexistent instruction and crash
+So basically, it's your main memory chip, accessible with addresses (prefixed with `$` in assembly). And it's split into multiple logical parts. And since they're only logical, it's easy to overflow some addresses and start writing to RAM while thinking you're still in VRAM. And writing to ROM at any point would probably cause console to execute undefined instruction and crash
 
 ### VRAM
 
-The `0 - 61439 (240 * 256 - 1)` space is for pixels rendered on the screen. Each byte is corresponded to the palette to get the color value and placed on the screen each `vsync`.
+The `0 - 61439 (240 * 256 - 1)` space is for pixels rendered on the screen. Each `vsync` (new frame), each byte is matched with the palette to get the color value of this specific pixel on the screen.
 
 So to, for example, draw a little smile at the top left of the screen you would do something like this:
-```
+```armasm
 mov 2 $0   ; row 0, column 0
 mov 2 $2   ; row 0, column 2
 mov 2 $260 ; row 1, column 3
@@ -25,6 +25,8 @@ mov 2 $514 ; row 2, column 2
 
 So, to translate pixel coordinate (from the top-left, indexed from 0) you take the y coordinate, multiply it by 256 and add x coordinate: `y * 256 + x`
 
+Oh and technically it's a framebuffer and not VRAM, but PICO-8 uses VRAM, so I will to, thank you very much
+
 ### RAM
 
 It starts after the VRAM and spreads for `ram_size` bytes (check [Manifest](./manifest.md))
@@ -33,7 +35,7 @@ This is basically your workspace: you can use it to store variables, manipulate 
 
 For example to store player's score you can decide on address (let's say 61441) and then update when needed:
 
-```
+```armasm
 update_score:
     mov $61441 ?LL1
     add ?LL1 &1
@@ -47,7 +49,7 @@ Last two cells of the RAM are reserved for user input: held and pressed buttons.
 
 This is the part where data goes on `push` and `pop` commands as well as calling the function with `call` and returning with `ret`. For example
 
-```
+```armasm
 ; Pushing values onto the stack
 push 2
 push 3
@@ -72,7 +74,7 @@ vsync
 
 It's especially useful if you're working with functions (this example is a bit complex, but I believe in ya <3)
 
-```
+```armasm
 jmp $start
 
 factorial:  ; factorial of number N is N * (N - 1) * ... * 2 * 1
@@ -104,9 +106,11 @@ start:
     vsync
 ```
 
+> Yes, I know that's usually shares the space with RAM, but... I just decided to do it this way... Okay, okay, this is just because it was easier to implement this way. And anyway, I created it, I win 😝
+
 ### ROM
 
-Well... ROM is usually stands for `Read-only memory`, but you can actually edit this one so it's more of a `program storage`
+Well... ROM is usually stands for `Read-only memory`, but you can actually edit this one so it's more of a `Program storage`
 
 So, not much to say here. And yes you can write self-modifying code, but... it's a pain in the ass and there's no reason to tbh
 

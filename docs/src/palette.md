@@ -1,6 +1,6 @@
 # Palette
 
-So, instead of writing RGB or whatever color model you prefer you're doing something called "Palettes". Here I'm gonna talk about what it is, how to use and setup it
+So, instead of using RGB or whatever color model you prefer, you'll have to work with palettes. Here I'm gonna talk about what it is, how to use and setup it
 
 ## What is a palette
 
@@ -10,9 +10,9 @@ For example, when console draws a screen, it takes everything in VRAM and then m
 
 ## How to create it
 
-The thing was designed with [Aseprite](https://www.aseprite.org/) in mind so I'm gonna explain with it. If you have any other program - you gotta figure it out yourself sorry :(
+Console was designed with [Aseprite](https://www.aseprite.org/) in mind so I'm gonna explain with it. If you have any other program - you gotta figure it out yourself, sorry :(
 
-So, the thing on your left with rectangles are your internal Aseprite palette. Pick one from the button on the top or create yourself
+So, the thing on your left with rectangles are your internal Aseprite palette. Pick one from the button on the top or create one yourself
 
 Once you're done with that and need to actually use it, click these two buttons:
 
@@ -20,7 +20,7 @@ Once you're done with that and need to actually use it, click these two buttons:
 
 And save with `.pal` extension. You'll understand that mischief managed if the generated file starts with `JASC-PAL`
 
-> Note: you need to use this palette for all your art that you're gonna use in the console. The PNGs you're gonna save will be treated basically index arrays and if you use wrong palette - you're gonna get wrong colors at runtime
+> Note: you need to use this palette for all your art that you're gonna use in the console. The PNGs you're gonna save will be basically treated as index arrays and if you use wrong palette - you're gonna get wrong colors at runtime
 
 ## Convention
 
@@ -41,7 +41,7 @@ for rel in 0..visible_width {
 
 ### Unset colors
 
-All unused colors are set as black. This is just so console won't crash if unset color is set + I can enjoy my compile-time array size
+All unused colors are set as black. This is just so console won't crash if unset color is set + I, as a fellow rust programmer, can enjoy my compile-time array size
 
 So, for example, if your `.pal` file is like this:
 ```

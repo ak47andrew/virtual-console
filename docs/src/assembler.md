@@ -1,6 +1,6 @@
 # Assembly language
 
-Assembly language is something you're gonna be working. A lot. So pay attention, kids, this is really important
+Assembly language is something you're gonna be working with. A lot. So pay attention, kids, this is really important
 
 Assembly language here is called VEA which stands for... Virtual emulator assembly.
 <details>
@@ -13,13 +13,13 @@ But yeah and VEA it's only because it was the only thing that came to my mind wh
 If talking about extensions:
 - `.vea` (Virtual emulator assembly): already talked about it, insane naming
 - `.veb` (Virtual emulator binary): the actual executed binary... At least it's got some connection
-- `.vec` (Virtual emulator cartridge): whole bundle that console executes. And I swear the ve**a**, ve**b** and ve**c** is the coincidence
-- `.rfe` (Random f\*\*king extension): my favorite out of all of them. The `.pal` files after compiling turn this into clean byte sequence and it would be called `.act` which apparently it isn't (due to being variable-length and having alpha)
+- `.vec` (Virtual emulator cartridge): whole bundle that console executes. And I swear the ve**a**, ve**b** and ve**c** is a coincidence
+- `.rfe` (Random f\*\*king extension): my favorite of them all. The `.pal` file, after compiling, is encoded into clean byte sequence and saved in `.rfe` file. And it would be called `.act` which apparently it isn't (due to being variable-length and having alpha)
 
 ---
 </details>
 
-Overall the language is pretty much your usual assembly language. Instructions are split with newlines, first word is the instruction (or opcode) - basically what you need to do, second and later are operands (arguments) that specifies on what things to do that.
+Overall the language is pretty much your usual assembly language. Instructions are split with newlines, first word is the instruction (or opcode) - basically what you need to do. Other are operands (arguments) that specifies sources, destinations, sizes, dev's mother phone numbers and so on.
 
 For example `mov` will tell console to move the data, first operand `!A` will tell it to pull value from register `A` and second operand `$0` will tell it to put it on the first pixel of the screen (check [Memory](./memory.md))
 
@@ -62,10 +62,39 @@ infinite_loop:
 jmp $infinite_loop  ; See? Much better then `jmp $1238157`!
 ```
 
-Oh and two more things:
-- For different types of operands that exist check out [Operand types](./operands.md)
-- For all instructions that exist see [Instruction description](./opcodes.md)
+## HELD and PRESSED addresses
+
+The input consists of two bytes at the very end of the RAM section: HELD and PRESSED. So if at previous frame you pressed "space" and "c" and at start of this frame you’re continuing pressing "space", but release "c" and press "x", then HELD byte is going to have "space", "c" and "x" in it, while PRESSED is only gonna have "x" pressed. Makes sense? Here's a little example just in case:
+
+```armasm
+mov $63438 !G3
+and !G3 0b10000000  ; Checking the "up" button
+; If up is pressed, then !A register is gonna be set to 1
+; So now you can do jz/jnz from it
+```
+
+The exact schema of the byte is as follows:
+`[Up][Down][Left][Right][Z][X][C][Space]`
+
+Due to this addresses being dependent on the RAM size you set in the Manifest, you need to look at the compiler's output. When you compile your project it will output something like this:
+```
+[2026-07-08T13:04:20Z][INFO]: Compiling project folder "source/"...
+[2026-07-08T13:04:20Z][INFO]: Parsed manifest at source/manifest.toml
+[2026-07-08T13:04:20Z][INFO]: === SECTIONS ===
+[2026-07-08T13:04:20Z][INFO]: VRAM: 0-61440
+[2026-07-08T13:04:20Z][INFO]: RAM: 61441-63439
+[2026-07-08T13:04:20Z][INFO]: STACK: 63440-64440
+[2026-07-08T13:04:20Z][INFO]: ROM: 64441-...
+[2026-07-08T13:04:20Z][INFO]: === SPECIAL ADDRESSES ===
+[2026-07-08T13:04:20Z][INFO]: INPUT_HELD: $63438
+[2026-07-08T13:04:20Z][INFO]: INPUT_PRESSED: $63439
+```
+This will help you in both figuring out where main memory's data is and what addresses to pull input data from
 
 ## `new` argument
 
-When running compiler you can write something like this: `vea_compile new CoolProject` and this will create a `CoolProject` folder with full hierarchy you might need for creating a project. This is the quick way to create a new project without much trouble
+When running compiler you can write something like this: `vea_compile new CoolProject` and this will create a `CoolProject` folder with full hierarchy you might need for creating a project: filled up Manifest, minimal palette, script and folders for backgrounds and sprites. This is the quick way to create a new project
+
+Oh and two more things:
+- For different types of operands that exist check out [Operand types](./operands.md)
+- For all instructions that exist see [Instruction description](./opcodes.md)

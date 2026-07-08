@@ -1,5 +1,14 @@
 # Instruction description
 
+A little side note before we go to the specific instructions. Unlike in NES that had opcode variants that specified what operands it was using, VEA use different approach. Since size is not longer a constraint, for extendability it uses a single byte to specify general instruction (that's you're gonna see here), each of which has set amount of operands. Each operand then has a specific 1-byte prefix to specify it's type:
+- `0x01`: `Immediate`
+- `0x02`: `LongImmediate`
+- `0x03`: `LongerImmediate`
+- `0xAD`: `Address`
+- `0x10`: `Register`
+- `0x11`: `LongRegister`
+- `0x12`: `IndirectAddress`
+
 ## Miscellaneous
 
 ### Noop
@@ -37,7 +46,7 @@ hlt  ; ...and then stop to look at it
 
 ### Mov
 
-Move data between same-size containers. First operand is the source, second - the destination. If you need transfer something between different places - you probably 
+Move data between same-size containers. First operand is the source, second - destination. If you need transfer something between different sizes - you probably need to use `trunc` or `ext`
 
 **Operands:**
 - `Immediate`, `Address`
@@ -68,7 +77,7 @@ mov $2 !G1
 
 ### Trunc
 
-Move data from higher-size container to the lower-size. Only last bytes is gonna be save, everything else is gonna be **trunc**ated. Usually used to move 64-bit register to 8-bit one or if you don't want to truncate your immediates for whatever reason
+Move data from higher-size container to the lower-size. Only lower bytes is gonna be saved (Big-endian), everything else is gonna be **trunc**ated. Usually used to move 64-bit register to 8-bit one
 
 **Operands:**
 - `LongImmediate`, `Register`
@@ -82,7 +91,7 @@ trunc ?LL1 !A
 ```
 
 ### Ext
-Move data from lower-size container to the higher-size one. The first 7 bits is zeroed out. This can also be used to transfer one byte from main memory to LongRegister instead of the whole 8 when using `mov`
+Move data from lower-size container to the higher-size one. This can also be used to transfer one byte from main memory to LongRegister instead of the whole 8 when using `mov`
 
 **Operands:**
 - `Address`, `LongRegister`
@@ -106,11 +115,11 @@ Your primary way to copy huge chunks of data between different addresses in memo
 
 **Example:**
 
-*Check* [*examples/copy.vea*](https://github.com/ak47andrew/virtual-console/blob/main/examples/copy.vea)
+*Check* [*examples/copy.vea*](https://git.321657325.xyz/Reborn/virtual-console/src/branch/main/examples/copy.vea)
 
-### Arithmetic and binary
+## Arithmetic and binary
 
-> NOTE: The `LongRegister`, `Address` combo requires additional explanation. Instead of using data stored in specified address it takes the address itself add does an operation with it and LongRegister. This is specifically added to allow techniques like jump tables to work and reasonably only use it in `add` instruction and with a label like this:
+> NOTE: The `LongRegister`, `Address` combo requires additional explanation. Instead of using data stored in specified address it takes the address itself and does an operation with it and LongRegister. This is added to allow techniques like jump tables to work:
 ```armasm
 move_forward:
     ext $61443 ?LL1
@@ -122,7 +131,7 @@ move_forward:
 
 ### Add
 
-Adds two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if overflow occurred then `!Z` is set to `1`, else - to `0`
+Adds two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. If overflow occurred, `!Z` is set to `1`, otherwise it's set to `0`
 
 **Operands:**
 - `Immediate`, `Immediate`
@@ -144,7 +153,7 @@ add !A !X
 
 ### Sub
 
-Subtract two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if underflow occurred then `!Z` is set to `1`, else - to `0`
+Subtract two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. If underflow occurred, `!Z` is set to `1`, otherwise it's set to `0`
 
 **Operands:**
 - `Immediate`, `Immediate`
@@ -166,7 +175,7 @@ sub !A !X
 
 ### Mul
 
-Multiply two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. Also if underflow occurred then `!Z` is set to `1`, else - to `0`
+Multiply two numbers of the same size and stores result in a register. For 8-bit values it's `!A`, for 64-bit - `?LL1`. If overflow occurred, `!Z` is set to `1`, otherwise it's set to `0`
 
 **Operands:**
 - `Immediate`, `Immediate`
@@ -188,7 +197,7 @@ mul !A !X
 
 ### Div
 
-Divide two numbers of the same size and stores result in one register and remainder in another. For 8-bit values it's `!A` and `!X`, for 640-bit it's `?LL1` and `?LL2`
+Divide two numbers of the same size and stores result in one register and remainder in another. For 8-bit values it's `!A` and `!X`, for 64-bit it's `?LL1` and `?LL2`
 
 **Operands:**
 - `Immediate`, `Immediate`
@@ -276,7 +285,7 @@ xor !A !X
 
 ### Not
 
-Performs `binary NOT (!)` operation on the number. Result is stored in `!A` for 8-bit values and `?LL1` for 64-bit values
+Performs `binary NOT (!)` operation on the number. Result is stored in `!A` for 8-bit value and `?LL1` for 64-bit value
 
 **Operands:**
 - `Immediate`
@@ -348,7 +357,7 @@ shl ?LL1 !A
 
 ### Jmp
 
-Jumps (moves PC) to the specified label or address, allowing to create infinite loops
+Jumps (moves PC) to the specified label or address, allowing to create infinite loops or skipping some parts of the code
 
 **Operands:**
 - `Address`
@@ -359,7 +368,7 @@ Jumps (moves PC) to the specified label or address, allowing to create infinite 
 loop:
 ; <Do something in a loop>
 
-jmp $loop  ; label is gonna be resolved to the address at compile time
+jmp $loop
 ```
 
 ### Jnz
@@ -375,7 +384,7 @@ mov !G1 30
 
 ; Check against 30
 sub !G1 30
-; If it's not zero - then the initial value isn't 30, meaning we should jump to `else` block
+; If result isn't zero - then the initial value wasn't 30, meaning we need to jump to `else` block
 jnz !A $else_block
 
 ; <Do something, G1 = 30>
@@ -399,7 +408,7 @@ if (G1 == 30) {
 }
 ```
 
-## Jz
+### Jz
 
 Jumps (moves PC) to the specified label or address only if specified register **equal to zero**, allowing to create branching and loops
 
@@ -419,7 +428,7 @@ jz !A $loop_end
 ; Increment the G1
 add !G1 1
 mov !A !G1
-jmp $loop  ; this is gonna be resolved to the address at compile time
+jmp $loop
 
 loop_end:
 ```
@@ -523,9 +532,11 @@ img &256 !G1 !G2
 vsync
 ```
 
+> Note: if sprite is drawn on the edge of the screen and some pixels are out of bounds of the screen - they're not gonna be drawn and not overflow to RAM/to the other edge of the screen. This is expected behavior
+
 ### Vsync
 
-Tell the console to "swap the banks" and update input. After this command is reached, console will display update screen texture from VRAM (see [Memory](./memory.md)) and place pressed and held buttons at the last two bytes of the RAM (compiler reports this addresses)
+Tell the console to the "buffer swapping" and update input bytes. After this command is reached, console will update screen texture from VRAM (see [Memory](./memory.md)) and place pressed and held buttons at the last two bytes of the RAM (Bro just read memory)
 
 **Operands:**
 - `none`
