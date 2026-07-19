@@ -4,6 +4,7 @@ members = [
     "src/compiler",
     "src/runtime",
     "src/launcher",
-    "src/flowchart-gen"
+    "src/flowchart-gen",
+    "src/lsp",
 ]
 resolver = "3"
