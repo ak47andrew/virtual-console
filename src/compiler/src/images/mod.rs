@@ -18,7 +18,7 @@ fn encode_img(filename: PathBuf, dim: Vec2<u32>, filetype: &str) -> Option<Vec<u
     let file_str = filename.to_string_lossy().to_string();
     let file = match File::open(filename) {
         Ok(file) => file,
-        Err(e) => {
+        Err(_) => {
             error!("Error opening file: {:?}", file_str);
             return None;
         }

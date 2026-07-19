@@ -1,5 +1,3 @@
-use std::net::UdpSocket;
-
 pub struct Node {
     name: String,
     code: String,

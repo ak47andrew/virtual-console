@@ -5,7 +5,7 @@ use std::env::args;
 use std::fs::{read_to_string, write};
 use std::process::exit;
 use regex::Regex;
-use crate::graph::{Graph, Node};
+use crate::graph::Graph;
 
 fn split_by_labels(code: String) -> Vec<String> {
     let re = Regex::new(r"[\w\d_]+:\n").unwrap();

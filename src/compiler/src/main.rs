@@ -26,9 +26,9 @@ fn main() -> ExitCode {
         })
         .init();
 
-    let mut args = env::args().collect::<Vec<String>>();
+    let args = env::args().collect::<Vec<String>>();
 
-    let compile = args.len() == 2 && fs::exists(args[1].clone()).unwrap_or_else(|_| false);
+    let compile = args.len() == 2 && fs::exists(args[1].clone()).unwrap_or(false);
     let new_ = args.len() == 3 && args[1] == "new";
     if !(compile || new_) {
         eprintln!("Usage: {} <source folder|new>", args[0]);
