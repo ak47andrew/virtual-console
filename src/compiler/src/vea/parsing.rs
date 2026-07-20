@@ -180,7 +180,7 @@ pub fn parse_address_num(input: String) -> Result<u64, CompilationError> {
     }
 }
 
-pub fn encode_opcode(opcode: Opcode, args: &[&str], line: &str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Vec<u8>, CompilationError> {
+pub fn encode_opcode(opcode: Opcode, args: &[&str], _line: &str, labels: &HashMap<String, u64>, is_first_pass: bool, manifest: &Manifest) -> Result<Vec<u8>, CompilationError> {
     let (kinds, operands) = parse_operands(args, labels, is_first_pass, manifest)?;
 
     if !get_signature(opcode).check(&kinds){
