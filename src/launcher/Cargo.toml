@@ -3,6 +3,9 @@ name = "vea_launcher"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+drm = ["raylib/drm", "raylib/opengl_es_20"]
+
 [dependencies]
 raylib = { version = "6.0.0", features = [] }
 vea_shared = { path = "../shared" }
