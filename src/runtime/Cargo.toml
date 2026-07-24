@@ -3,8 +3,11 @@ name = "vea_runtime"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+drm = ["raylib/drm", "raylib/opengl_es_20"]
+
 [dependencies]
-raylib = { version = "5.5.1", features = [] }
+raylib = { version = "6.0", features=["SUPPORT_IMAGE_GENERATION"] }
 vea_shared = { path = "../shared" }
 num-traits = "0.2.19"
 num-bigint = "0.4"
