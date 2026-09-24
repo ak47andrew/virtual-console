@@ -5,7 +5,7 @@ pub enum Opcode {
     Add, Sub, Mul, Div,
     And, Or, Xor, Not, Shr, Shl,
     Jmp, Jnz, Jz,
-    PUSH, POP, RET, CALL,
+    PUSH, POP, PUSH64, POP64, RET, CALL,
     IMG, BG,
     DBG, DBGSEC
 }
@@ -42,6 +42,8 @@ impl Opcode {
             Opcode::POP => 0x51,
             Opcode::RET => 0x52,
             Opcode::CALL => 0x53,
+            Opcode::PUSH64 => 0xE0,  // It's an extension instruction so it starts with an E. Let's just hope there won't be more than 10 of those xD
+            Opcode::POP64 => 0xE1,
             
             Opcode::IMG => 0x60,
             Opcode::BG => 0x61,
@@ -81,6 +83,8 @@ impl Opcode {
             0x61 => Some(Opcode::BG),
             0x70 => Some(Opcode::DBG),
             0x71 => Some(Opcode::DBGSEC),
+            0xE0 => Some(Opcode::PUSH64),
+            0xE1 => Some(Opcode::POP64),
             _ => None
         }
     }

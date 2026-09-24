@@ -231,6 +231,15 @@ pub const DBGSEC_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
     }
 });
 
+pub const PUSH64_SIGNATURE: Lazy<InstructionSignature> = Lazy::new(|| {
+    InstructionSignature {
+        operands_variations: vec![
+            vec![LongImmediate],
+            vec![LongRegister]
+        ]
+    }
+});
+
 pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
     match opcode {
         Opcode::Noop => EMPTY_SIGNATURE,
@@ -261,5 +270,7 @@ pub fn get_signature(opcode: Opcode) -> Lazy<InstructionSignature> {
         Opcode::IMG => IMG_SIGNATURE,
         Opcode::DBG => DBG_SIGNATURE,
         Opcode::DBGSEC => DBGSEC_SIGNATURE,
+        Opcode::POP64 => EMPTY_SIGNATURE,
+        Opcode::PUSH64 => PUSH64_SIGNATURE,
     }
 }

@@ -693,6 +693,18 @@ impl Emulator {
                 let value = self.memory.pop8();
                 self.memory.write_reg(Registers::A, value);
             }
+            Opcode::PUSH64 => {
+                let value: u64 = match Operand::from_bytes(&mut self.memory) {
+                    Operand::LongRegister(reg) => {self.memory.read_reg_long(reg)},
+                    Operand::LongImmediate(val) => {val},
+                    _ => panic!()
+                };
+                self.memory.push64(value);
+            }
+            Opcode::POP64 => {
+                let value = self.memory.pop64();
+                self.memory.write_reg_long(LongRegisters::LL1, value);
+            }
             Opcode::CALL => {
                 let target = match Operand::from_bytes(&mut self.memory) {
                     Operand::Address(addr) => addr,
